@@ -163,6 +163,43 @@ def load_positions() -> dict:
     return {}
 
 
+def sync_positions_from_robinhood(positions: dict) -> None:
+    """Pull live Robinhood holdings and add any not already tracked."""
+    try:
+        holdings = r.account.build_holdings()
+        if not holdings:
+            return
+        added = 0
+        for ticker, data in holdings.items():
+            if ticker in positions:
+                continue
+            quantity = float(data.get("quantity", 0))
+            avg_buy_price = float(data.get("average_buy_price", 0))
+            equity = float(data.get("equity", 0))
+            if quantity <= 0 or avg_buy_price <= 0:
+                continue
+            positions[ticker] = {
+                "entry_price": avg_buy_price,
+                "dollars_invested": equity,
+                "dollars_remaining": equity,
+                "entry_time": datetime.now(EASTERN).isoformat(),
+                "high_water_mark": avg_buy_price,
+                "tiers_triggered": [],
+                "trailing_stop_active": False,
+                "trailing_stop_floor_pct": None,
+                "news_flag": "imported from Robinhood",
+            }
+            added += 1
+            logger.info("Imported existing position: %s — %s shares @ $%.2f", ticker, quantity, avg_buy_price)
+        if added:
+            save_positions(positions)
+            logger.info("Synced %d position(s) from Robinhood into tracker.", added)
+        else:
+            logger.info("No new positions to sync from Robinhood.")
+    except Exception as exc:
+        logger.error("Failed to sync positions from Robinhood: %s", exc)
+
+
 def save_positions(positions: dict) -> None:
     try:
         with open(POSITIONS_FILE, "w") as f:
@@ -1096,6 +1133,8 @@ def main() -> None:
 
     positions = load_positions()
     logger.info("Loaded %d existing positions from file.", len(positions))
+    sync_positions_from_robinhood(positions)
+    logger.info("Tracking %d position(s) total after Robinhood sync.", len(positions))
 
     closed_today = False
     premarket_scanned = False
