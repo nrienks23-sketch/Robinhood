@@ -408,3 +408,5 @@
 7 Failed downloads:
 2026-06-09 14:06:01,298 [ERROR] ['AYRO', 'ARVL', 'XL', 'RIDE', 'FSR', 'PTRA', 'SOLO']: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
 2026-06-09 14:06:08,904 [INFO] Volume filter: 0 tickers pass volume spike test
+2026-06-09 14:24:52,992 [INFO] Dynamic universe: 1497 tickers from Finviz screener.
+2026-06-09 14:25:51,854 [INFO] Dynamic universe: 1481 tickers from Finviz screener.
