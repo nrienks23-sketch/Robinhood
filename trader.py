@@ -335,6 +335,7 @@ def is_morning_star(df: pd.DataFrame, idx: int) -> bool:
 
 
 def has_bullish_pattern(df: pd.DataFrame) -> bool:
+    """Check last 2 candles of any timeframe dataframe for bullish patterns."""
     last_idx = len(df) - 1
     for idx in [last_idx, last_idx - 1]:
         if idx < 0:
@@ -346,6 +347,49 @@ def has_bullish_pattern(df: pd.DataFrame) -> bool:
         if is_morning_star(df, idx):
             return True
     return False
+
+
+def fetch_intraday_ohlcv(ticker: str, interval: str = "5m", period: str = "1d") -> pd.DataFrame | None:
+    """Pull intraday candles for pattern detection at market open."""
+    try:
+        df = yf.download(ticker, period=period, interval=interval,
+                         progress=False, auto_adjust=True, prepost=False)
+        if df is None or df.empty or len(df) < 3:
+            return None
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+        df.columns = [c.lower() for c in df.columns]
+        df.dropna(inplace=True)
+        return df
+    except Exception as exc:
+        logger.debug("Intraday fetch failed for %s: %s", ticker, exc)
+        return None
+
+
+def has_bullish_pattern_intraday(ticker: str) -> tuple[bool, str]:
+    """
+    Check intraday (5-min) candles first, fall back to daily.
+    Returns (pattern_found, description).
+    """
+    # Try 5-min candles first — most relevant for day trading
+    df_5m = fetch_intraday_ohlcv(ticker, interval="5m", period="1d")
+    if df_5m is not None and len(df_5m) >= 3:
+        if has_bullish_pattern(df_5m):
+            return True, "bullish pattern on 5m candles"
+
+    # Try 15-min candles as second option
+    df_15m = fetch_intraday_ohlcv(ticker, interval="15m", period="5d")
+    if df_15m is not None and len(df_15m) >= 3:
+        if has_bullish_pattern(df_15m):
+            return True, "bullish pattern on 15m candles"
+
+    # Fall back to daily candles
+    df_1d = fetch_ohlcv(ticker, period="60d", interval="1d")
+    if df_1d is not None and len(df_1d) >= 3:
+        if has_bullish_pattern(df_1d):
+            return True, "bullish pattern on daily candles"
+
+    return False, "no bullish pattern on 5m, 15m, or daily candles"
 
 
 def check_news_catalyst(ticker: str) -> tuple[bool, str]:
@@ -577,13 +621,14 @@ def check_entry_signals(ticker: str) -> tuple[bool, float | None, str]:
     if float(macd_line.iloc[-1]) <= float(signal_line.iloc[-1]):
         return False, current_price, "MACD below signal"
 
-    # --- Candlestick pattern ---
-    if not has_bullish_pattern(df):
-        return False, current_price, "no bullish candlestick pattern"
+    # --- Candlestick pattern (5m → 15m → daily) ---
+    pattern_found, pattern_desc = has_bullish_pattern_intraday(ticker)
+    if not pattern_found:
+        return False, current_price, pattern_desc
 
     return True, current_price, (
         f"all signals passed | price={current_price:.2f} RSI={rsi_val:.1f} "
-        f"vol={current_vol:.0f} ({current_vol/avg_vol_20:.1f}x avg)"
+        f"vol={current_vol:.0f} ({current_vol/avg_vol_20:.1f}x avg) | {pattern_desc}"
     )
 
 # ---------------------------------------------------------------------------
