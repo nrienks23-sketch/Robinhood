@@ -948,7 +948,7 @@ def afterhours_scan(positions: dict) -> None:
     print(f"\n  Scanning for after-hours movers...")
     universe = get_dynamic_universe()
     movers = []
-    for i, ticker in enumerate(universe[:300]):  # limit to 300 for speed
+    for i, ticker in enumerate(universe[:100]):  # limit to 100 for speed
         try:
             ah_df = yf.download(ticker, period="2d", interval="1m",
                                 progress=False, auto_adjust=True, prepost=True)
