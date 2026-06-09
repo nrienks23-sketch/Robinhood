@@ -1,18 +1,26 @@
 # Install dependencies:
-# pip install robin_stocks yfinance pandas_ta pandas numpy pytz finvizfinance
+# pip install robin_stocks yfinance pandas_ta pandas numpy pytz finvizfinance requests
 
 import os
+import re
 import json
 import time
 import logging
 import math
-from datetime import datetime, time as dtime
+import urllib.request
+from datetime import datetime, timezone, time as dtime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytz
 import yfinance as yf
+
+try:
+    import requests as _requests
+    REQUESTS_AVAILABLE = True
+except ImportError:
+    REQUESTS_AVAILABLE = False
 
 try:
     import pandas_ta as ta
@@ -340,11 +348,186 @@ def has_bullish_pattern(df: pd.DataFrame) -> bool:
     return False
 
 
+def check_news_catalyst(ticker: str) -> tuple[bool, str]:
+    """
+    Scan multiple sources for recent news and social buzz on a ticker.
+    Returns (is_safe_to_trade, summary_string).
+
+    Blocks entry if:
+    - Negative keywords found in recent headlines (lawsuit, fraud, SEC, bankruptcy, etc.)
+    - No news at all AND no social buzz (dead stock, not worth trading)
+
+    Boosts confidence if:
+    - Bullish keywords in headlines (earnings beat, partnership, FDA approval, upgrade, etc.)
+    - Reddit mentions today
+    - StockTwits bullish sentiment majority
+    - High Google News article count in last 24h
+    """
+    now_utc = datetime.now(timezone.utc)
+    summary_parts = []
+    negative_hit = False
+    positive_score = 0
+
+    NEGATIVE_KEYWORDS = [
+        'lawsuit', 'fraud', 'sec investigation', 'bankruptcy', 'bankrupt',
+        'delisted', 'delisting', 'class action', 'restatement', 'restated',
+        'going concern', 'default', 'insolvency', 'ponzi', 'investigated',
+        'criminal', 'indicted', 'misleading', 'recall', 'fda rejection',
+        'rejected', 'halt', 'suspended trading',
+    ]
+    POSITIVE_KEYWORDS = [
+        'earnings beat', 'raised guidance', 'upgrade', 'buy rating', 'strong buy',
+        'partnership', 'contract', 'fda approval', 'approved', 'acquisition',
+        'merger', 'buyout', 'beats estimates', 'record revenue', 'record sales',
+        'short squeeze', 'unusual options', 'insider buying', 'breakout',
+    ]
+
+    # --- 1. Yahoo Finance news (last 24 hours) ---
+    try:
+        yf_news = yf.Ticker(ticker).news or []
+        recent = []
+        for article in yf_news:
+            pub = article.get('content', {}).get('pubDate') or article.get('providerPublishTime')
+            # handle both timestamp int and ISO string
+            if isinstance(pub, int):
+                age_hours = (now_utc.timestamp() - pub) / 3600
+            elif isinstance(pub, str):
+                try:
+                    pub_dt = datetime.fromisoformat(pub.replace('Z', '+00:00'))
+                    age_hours = (now_utc - pub_dt).total_seconds() / 3600
+                except Exception:
+                    age_hours = 999
+            else:
+                age_hours = 999
+            if age_hours <= 24:
+                title = (article.get('content', {}).get('title') or
+                         article.get('title') or '').lower()
+                recent.append(title)
+
+        if recent:
+            summary_parts.append(f"Yahoo:{len(recent)} articles")
+            for title in recent:
+                for kw in NEGATIVE_KEYWORDS:
+                    if kw in title:
+                        negative_hit = True
+                        summary_parts.append(f"⚠️ negative keyword '{kw}'")
+                        break
+                for kw in POSITIVE_KEYWORDS:
+                    if kw in title:
+                        positive_score += 1
+                        break
+    except Exception as exc:
+        logger.debug("Yahoo news fetch failed for %s: %s", ticker, exc)
+
+    # --- 2. StockTwits sentiment ---
+    if REQUESTS_AVAILABLE:
+        try:
+            resp = _requests.get(
+                f"https://api.stocktwits.com/api/2/streams/symbol/{ticker}.json",
+                timeout=5,
+            )
+            if resp.status_code == 200:
+                messages = resp.json().get('messages', [])
+                bullish = sum(1 for m in messages
+                              if m.get('entities', {}).get('sentiment', {}) and
+                              m['entities']['sentiment'].get('basic') == 'Bullish')
+                bearish = sum(1 for m in messages
+                              if m.get('entities', {}).get('sentiment', {}) and
+                              m['entities']['sentiment'].get('basic') == 'Bearish')
+                total_sentiment = bullish + bearish
+                if total_sentiment > 0:
+                    bull_pct = bullish / total_sentiment * 100
+                    summary_parts.append(f"StockTwits:{len(messages)}msgs {bull_pct:.0f}%bull")
+                    if bull_pct >= 60:
+                        positive_score += 1
+                    elif bull_pct <= 30:
+                        negative_hit = True
+                        summary_parts.append("⚠️ StockTwits mostly bearish")
+        except Exception as exc:
+            logger.debug("StockTwits fetch failed for %s: %s", ticker, exc)
+
+    # --- 3. Reddit mentions (WSB, stocks, pennystocks) ---
+    if REQUESTS_AVAILABLE:
+        reddit_count = 0
+        headers = {'User-Agent': 'trader-scanner/1.0'}
+        for sub in ['wallstreetbets', 'stocks', 'pennystocks', 'RobinHoodPennyStocks', 'investing']:
+            try:
+                url = f"https://www.reddit.com/r/{sub}/search.json?q={ticker}&sort=new&limit=10&t=day"
+                resp = _requests.get(url, headers=headers, timeout=5)
+                if resp.status_code == 200:
+                    posts = resp.json().get('data', {}).get('children', [])
+                    reddit_count += len(posts)
+                    for post in posts:
+                        title = post.get('data', {}).get('title', '').lower()
+                        for kw in NEGATIVE_KEYWORDS:
+                            if kw in title:
+                                negative_hit = True
+                                summary_parts.append(f"⚠️ Reddit negative: '{kw}'")
+                                break
+            except Exception:
+                continue
+        if reddit_count > 0:
+            summary_parts.append(f"Reddit:{reddit_count} posts today")
+            positive_score += min(2, reddit_count // 3)  # up to +2 for heavy Reddit activity
+
+    # --- 4. Google News RSS ---
+    try:
+        gurl = f"https://news.google.com/rss/search?q={ticker}+stock+%22{ticker}%22&hl=en-US&gl=US&ceid=US:en"
+        req = urllib.request.Request(gurl, headers={'User-Agent': 'Mozilla/5.0'})
+        content = urllib.request.urlopen(req, timeout=5).read().decode('utf-8')
+        # Parse pub dates to filter last 24h
+        items = re.findall(r'<item>(.*?)</item>', content, re.DOTALL)
+        recent_google = 0
+        for item in items:
+            pub_match = re.search(r'<pubDate>(.*?)</pubDate>', item)
+            title_match = re.search(r'<title>(.*?)</title>', item)
+            if pub_match:
+                try:
+                    from email.utils import parsedate_to_datetime
+                    pub_dt = parsedate_to_datetime(pub_match.group(1))
+                    age_hours = (now_utc - pub_dt.astimezone(timezone.utc)).total_seconds() / 3600
+                    if age_hours <= 24:
+                        recent_google += 1
+                        if title_match:
+                            title = title_match.group(1).lower()
+                            title = re.sub(r'<[^>]+>', '', title)
+                            for kw in NEGATIVE_KEYWORDS:
+                                if kw in title:
+                                    negative_hit = True
+                                    summary_parts.append(f"⚠️ Google News negative: '{kw}'")
+                                    break
+                            for kw in POSITIVE_KEYWORDS:
+                                if kw in title:
+                                    positive_score += 1
+                                    break
+                except Exception:
+                    pass
+        if recent_google > 0:
+            summary_parts.append(f"GoogleNews:{recent_google} articles(24h)")
+            if recent_google >= 3:
+                positive_score += 1
+    except Exception as exc:
+        logger.debug("Google News fetch failed for %s: %s", ticker, exc)
+
+    # --- Decision ---
+    if negative_hit:
+        return False, "BLOCKED — " + " | ".join(summary_parts)
+
+    summary = " | ".join(summary_parts) if summary_parts else "no news found"
+    return True, f"news OK (score={positive_score}) — {summary}"
+
+
 def check_entry_signals(ticker: str) -> tuple[bool, float | None, str]:
     """
     Returns (should_enter, current_price, reason).
     reason is a human-readable string explaining the outcome.
     """
+    # --- News / catalyst check (runs first — bail early on bad news) ---
+    news_ok, news_summary = check_news_catalyst(ticker)
+    if not news_ok:
+        return False, None, news_summary
+    logger.debug("News check passed for %s: %s", ticker, news_summary)
+
     df = fetch_ohlcv(ticker, period="1y", interval="1d")
     if df is None or len(df) < 200:
         return False, None, "insufficient data"
