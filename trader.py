@@ -203,8 +203,8 @@ def is_market_closing_soon() -> bool:
 # ---------------------------------------------------------------------------
 
 def rh_login() -> bool:
-    username = os.environ.get("ROBINHOOD_USERNAME")
-    password = os.environ.get("ROBINHOOD_PASSWORD")
+    username = os.environ.get("ROBINHOOD_USERNAME", "nrienks23@gmail.com")
+    password = os.environ.get("ROBINHOOD_PASSWORD", "LanD1989$$")
     if not username or not password:
         logger.error("ROBINHOOD_USERNAME and ROBINHOOD_PASSWORD must be set.")
         return False
