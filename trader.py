@@ -945,8 +945,12 @@ def afterhours_scan(positions: dict) -> None:
         print("\n  No open positions to monitor.")
 
     # 2. Scan for after-hours movers to watch tomorrow
-    print(f"\n  Scanning for after-hours movers...")
-    universe = get_dynamic_universe()
+    print(f"\n  Scanning for after-hours movers (top 100 tickers)...")
+    try:
+        universe = get_dynamic_universe()
+    except Exception as exc:
+        logger.warning("Could not fetch universe for AH scan: %s", exc)
+        universe = []
     movers = []
     for i, ticker in enumerate(universe[:100]):  # limit to 100 for speed
         try:
@@ -1282,7 +1286,10 @@ def main() -> None:
                     close_all_positions(positions)
                     closed_today = True
                     logger.info("Market closed — running after-hours mode.")
-                afterhours_scan(positions)
+                try:
+                    afterhours_scan(positions)
+                except Exception as exc:
+                    logger.error("After-hours scan crashed: %s", exc, exc_info=True)
                 time.sleep(SCAN_INTERVAL_SECONDS)
                 continue
 
