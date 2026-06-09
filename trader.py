@@ -235,6 +235,14 @@ def is_market_closing_soon() -> bool:
     now = get_eastern_now()
     return now.time() >= MARKET_CLOSE
 
+
+def is_afterhours() -> bool:
+    """True between 4:00 PM and 8:00 PM ET on weekdays."""
+    now = get_eastern_now()
+    if now.weekday() >= 5:
+        return False
+    return MARKET_CLOSE <= now.time() < dtime(20, 0, 0)
+
 # ---------------------------------------------------------------------------
 # Robinhood helpers
 # ---------------------------------------------------------------------------
@@ -887,6 +895,104 @@ def load_premarket_watchlist() -> list[str]:
         return []
 
 
+def afterhours_scan(positions: dict) -> None:
+    """
+    Runs 4:00–8:00 PM ET every 5 minutes.
+    1. Shows after-hours price + P&L on all open positions.
+    2. Scans universe for stocks moving after hours — builds tomorrow's watchlist.
+    """
+    now_str = get_eastern_now().strftime("%Y-%m-%d %H:%M:%S ET")
+    print("\n" + "=" * 60)
+    print(f"  AFTER-HOURS UPDATE  |  {now_str}")
+    print("=" * 60)
+
+    # 1. Monitor open positions with after-hours prices
+    if positions:
+        print(f"\n  Open positions (after-hours prices):")
+        for ticker, pos in positions.items():
+            try:
+                ah_df = yf.download(ticker, period="1d", interval="1m",
+                                    progress=False, auto_adjust=True, prepost=True)
+                if ah_df is not None and not ah_df.empty:
+                    if isinstance(ah_df.columns, pd.MultiIndex):
+                        ah_df.columns = ah_df.columns.get_level_values(0)
+                    ah_df.columns = [c.lower() for c in ah_df.columns]
+                    ah_price = float(ah_df["close"].iloc[-1])
+                else:
+                    ah_price = get_current_price(ticker)
+                if not ah_price:
+                    continue
+                entry = pos["entry_price"]
+                pct = (ah_price - entry) / entry * 100
+                dollars_rem = pos.get("dollars_remaining", 0)
+
+                # Show sell/trim recommendation based on after-hours price
+                hard_stop = HARD_STOP_LOSS_PCT * 100
+                tiers_done = [t for t, _ in pos.get("tiers_triggered", [])]
+                next_tier = next(((t, frac) for t, frac in TIERS if t not in tiers_done), None)
+                if pct <= hard_stop:
+                    action = "🛑 CONSIDER SELLING — at hard stop after hours"
+                elif next_tier and pct >= next_tier[0] * 100:
+                    action = f"✂️  TRIM {int(next_tier[1]*100)}% at open — +{next_tier[0]*100:.0f}% tier"
+                else:
+                    action = f"⏳ hold — P&L {pct:+.1f}% after hours"
+
+                print(f"    {ticker:6s}  entry=${entry:.2f}  AH=${ah_price:.2f}  "
+                      f"P&L={pct:+.1f}%  remaining=${dollars_rem:.2f}  → {action}")
+            except Exception as exc:
+                logger.warning("After-hours price fetch failed for %s: %s", ticker, exc)
+    else:
+        print("\n  No open positions to monitor.")
+
+    # 2. Scan for after-hours movers to watch tomorrow
+    print(f"\n  Scanning for after-hours movers...")
+    universe = get_dynamic_universe()
+    movers = []
+    for i, ticker in enumerate(universe[:300]):  # limit to 300 for speed
+        try:
+            ah_df = yf.download(ticker, period="2d", interval="1m",
+                                progress=False, auto_adjust=True, prepost=True)
+            if ah_df is None or ah_df.empty:
+                continue
+            if isinstance(ah_df.columns, pd.MultiIndex):
+                ah_df.columns = ah_df.columns.get_level_values(0)
+            ah_df.columns = [c.lower() for c in ah_df.columns]
+
+            close_price = float(ah_df["close"].iloc[-1])
+            # Get regular session close (last 4pm bar)
+            reg_df = yf.download(ticker, period="1d", interval="1d",
+                                 progress=False, auto_adjust=True)
+            if reg_df is None or reg_df.empty:
+                continue
+            if isinstance(reg_df.columns, pd.MultiIndex):
+                reg_df.columns = reg_df.columns.get_level_values(0)
+            reg_df.columns = [c.lower() for c in reg_df.columns]
+            reg_close = float(reg_df["close"].iloc[-1])
+
+            ah_chg = (close_price - reg_close) / reg_close * 100
+            ah_vol = float(ah_df["volume"].iloc[-60:].sum())  # last hour AH volume
+
+            # Flag stocks moving >1% after hours with meaningful volume
+            if abs(ah_chg) >= 1.0 and ah_vol > 5000:
+                movers.append((ticker, close_price, ah_chg, ah_vol))
+        except Exception:
+            pass
+        if i % 20 == 0:
+            time.sleep(0.3)
+
+    movers.sort(key=lambda x: abs(x[2]), reverse=True)
+
+    print(f"\n  After-hours movers (top 15 for tomorrow):")
+    if movers:
+        for ticker, price, chg, vol in movers[:15]:
+            arrow = "🔺" if chg > 0 else "🔻"
+            print(f"    {ticker:6s} @ ${price:.2f}  {arrow} {chg:+.1f}% AH  vol={int(vol):,}")
+    else:
+        print("    No significant movers found.")
+
+    print("=" * 60 + "\n")
+
+
 def scan_for_entries(existing_positions: dict) -> dict:
     """
     Scan universe and return results bucketed by signal score.
@@ -1171,8 +1277,18 @@ def main() -> None:
         try:
             now_et = get_eastern_now()
 
-            # End-of-day close-out
-            if is_market_closing_soon():
+            # After-hours window: 4:00–8:00 PM ET
+            if is_afterhours():
+                if not closed_today:
+                    close_all_positions(positions)
+                    closed_today = True
+                    logger.info("Market closed — running after-hours mode.")
+                afterhours_scan(positions)
+                time.sleep(SCAN_INTERVAL_SECONDS)
+                continue
+
+            # End-of-day (after 8 PM ET) — just sleep
+            if is_market_closing_soon() and not is_afterhours():
                 if not closed_today:
                     close_all_positions(positions)
                     closed_today = True
