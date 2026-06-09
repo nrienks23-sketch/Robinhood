@@ -950,7 +950,8 @@ def afterhours_scan(positions: dict) -> None:
     movers = []
     for i, ticker in enumerate(universe[:100]):  # limit to 100 for speed
         try:
-            ah_df = yf.download(ticker, period="2d", interval="1m",
+            # Single call with prepost=True gives both regular and AH bars
+            ah_df = yf.download(ticker, period="2d", interval="5m",
                                 progress=False, auto_adjust=True, prepost=True)
             if ah_df is None or ah_df.empty:
                 continue
@@ -959,18 +960,16 @@ def afterhours_scan(positions: dict) -> None:
             ah_df.columns = [c.lower() for c in ah_df.columns]
 
             close_price = float(ah_df["close"].iloc[-1])
-            # Get regular session close (last 4pm bar)
-            reg_df = yf.download(ticker, period="1d", interval="1d",
-                                 progress=False, auto_adjust=True)
-            if reg_df is None or reg_df.empty:
+            # Regular close = last bar at or before 4pm ET
+            eastern = pytz.timezone("America/New_York")
+            ah_df.index = ah_df.index.tz_convert(eastern) if ah_df.index.tzinfo else ah_df.index
+            reg_bars = ah_df[ah_df.index.time <= dtime(16, 0, 0)]
+            if reg_bars.empty:
                 continue
-            if isinstance(reg_df.columns, pd.MultiIndex):
-                reg_df.columns = reg_df.columns.get_level_values(0)
-            reg_df.columns = [c.lower() for c in reg_df.columns]
-            reg_close = float(reg_df["close"].iloc[-1])
+            reg_close = float(reg_bars["close"].iloc[-1])
 
             ah_chg = (close_price - reg_close) / reg_close * 100
-            ah_vol = float(ah_df["volume"].iloc[-60:].sum())  # last hour AH volume
+            ah_vol = float(ah_df[ah_df.index.time > dtime(16, 0, 0)]["volume"].sum())
 
             # Flag stocks moving >1% after hours with meaningful volume
             if abs(ah_chg) >= 1.0 and ah_vol > 5000:
@@ -978,7 +977,7 @@ def afterhours_scan(positions: dict) -> None:
         except Exception:
             pass
         if i % 20 == 0:
-            time.sleep(0.3)
+            time.sleep(0.2)
 
     movers.sort(key=lambda x: abs(x[2]), reverse=True)
 
