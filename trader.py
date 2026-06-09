@@ -227,32 +227,32 @@ def get_current_price(ticker: str) -> float | None:
     return None
 
 
-def place_buy(ticker: str, shares: int) -> bool:
-    if shares < 1:
-        logger.warning("Attempted to buy 0 shares of %s — skipping.", ticker)
+def place_buy_dollars(ticker: str, amount_usd: float) -> bool:
+    if amount_usd < 1.0:
+        logger.warning("Buy amount $%.2f too small for %s — skipping.", amount_usd, ticker)
         return False
     if DRY_RUN:
-        logger.info("[DRY RUN] Would BUY %d shares of %s", shares, ticker)
+        logger.info("[DRY RUN] Would BUY $%.2f of %s", amount_usd, ticker)
         return True
     try:
-        result = r.orders.order_buy_market(ticker, shares)
-        logger.info("BUY %d shares of %s — order id: %s", shares, ticker, result.get("id"))
+        result = r.orders.order_buy_fractional_by_price(ticker, amount_usd)
+        logger.info("BUY $%.2f of %s — order id: %s", amount_usd, ticker, result.get("id"))
         return True
     except Exception as exc:
         logger.error("BUY order failed for %s: %s", ticker, exc)
         return False
 
 
-def place_sell(ticker: str, shares: int) -> bool:
-    if shares < 1:
-        logger.warning("Attempted to sell 0 shares of %s — skipping.", ticker)
+def place_sell_dollars(ticker: str, amount_usd: float) -> bool:
+    if amount_usd < 1.0:
+        logger.warning("Sell amount $%.2f too small for %s — skipping.", amount_usd, ticker)
         return False
     if DRY_RUN:
-        logger.info("[DRY RUN] Would SELL %d shares of %s", shares, ticker)
+        logger.info("[DRY RUN] Would SELL $%.2f of %s", amount_usd, ticker)
         return True
     try:
-        result = r.orders.order_sell_market(ticker, shares)
-        logger.info("SELL %d shares of %s — order id: %s", shares, ticker, result.get("id"))
+        result = r.orders.order_sell_fractional_by_price(ticker, amount_usd)
+        logger.info("SELL $%.2f of %s — order id: %s", amount_usd, ticker, result.get("id"))
         return True
     except Exception as exc:
         logger.error("SELL order failed for %s: %s", ticker, exc)
@@ -869,21 +869,16 @@ def scan_for_entries(existing_positions: dict) -> list[tuple[str, float]]:
 # ---------------------------------------------------------------------------
 
 def enter_position(ticker: str, price: float, positions: dict) -> None:
-    shares = math.floor(POSITION_SIZE_USD / price)
-    if shares < 1:
-        logger.warning("Cannot buy %s at $%.2f — price too high for $%d budget.", ticker, price, POSITION_SIZE_USD)
-        return
-
     _, news_summary = check_news_catalyst(ticker)
 
-    success = place_buy(ticker, shares)
+    success = place_buy_dollars(ticker, POSITION_SIZE_USD)
     if not success:
         return
 
     positions[ticker] = {
         "entry_price": price,
-        "shares": shares,
-        "original_shares": shares,
+        "dollars_invested": POSITION_SIZE_USD,
+        "dollars_remaining": POSITION_SIZE_USD,
         "entry_time": datetime.now(EASTERN).isoformat(),
         "high_water_mark": price,
         "tiers_triggered": [],
@@ -892,8 +887,8 @@ def enter_position(ticker: str, price: float, positions: dict) -> None:
         "news_flag": news_summary,
     }
     logger.info(
-        "ENTERED %s: %d shares @ $%.2f (cost ~$%.2f) | %s",
-        ticker, shares, price, shares * price, news_summary,
+        "ENTERED %s: $%.2f @ $%.2f per share | %s",
+        ticker, POSITION_SIZE_USD, price, news_summary,
     )
     save_positions(positions)
 
@@ -901,12 +896,12 @@ def enter_position(ticker: str, price: float, positions: dict) -> None:
 def update_position_exit(ticker: str, pos: dict, current_price: float, positions: dict) -> None:
     """Evaluate and execute exit logic for a single position."""
     entry = pos["entry_price"]
-    shares = pos["shares"]
-    original_shares = pos["original_shares"]
+    dollars_remaining = pos["dollars_remaining"]
+    dollars_invested = pos["dollars_invested"]
     hwm = pos["high_water_mark"]
     tiers_triggered = pos["tiers_triggered"]
 
-    if shares <= 0:
+    if dollars_remaining <= 0.50:
         del positions[ticker]
         save_positions(positions)
         return
@@ -924,10 +919,7 @@ def update_position_exit(ticker: str, pos: dict, current_price: float, positions
     if hwm_pct >= TRAILING_STOP_ACTIVATION_PCT and not pos["trailing_stop_active"]:
         pos["trailing_stop_active"] = True
         pos["trailing_stop_floor_pct"] = TRAILING_STOP_FLOOR_PCT
-        logger.info(
-            "TRAILING STOP ACTIVATED for %s (HWM +%.1f%%)",
-            ticker, hwm_pct * 100,
-        )
+        logger.info("TRAILING STOP ACTIVATED for %s (HWM +%.1f%%)", ticker, hwm_pct * 100)
 
     # Dynamic trailing stop: floor is max(fixed floor, hwm - drop_allowed)
     if pos["trailing_stop_active"]:
@@ -935,53 +927,50 @@ def update_position_exit(ticker: str, pos: dict, current_price: float, positions
         floor_pct = max(pos.get("trailing_stop_floor_pct") or TRAILING_STOP_FLOOR_PCT, dynamic_floor_pct)
         pos["trailing_stop_floor_pct"] = floor_pct
         if pct_gain <= floor_pct:
+            sell_usd = round(dollars_remaining * (1 + pct_gain), 2)
             logger.info(
-                "TRAILING STOP HIT for %s: price $%.2f (pct_gain=%.2f%% <= floor=%.2f%%)",
-                ticker, current_price, pct_gain * 100, floor_pct * 100,
+                "TRAILING STOP HIT for %s: price $%.2f (%.2f%% <= floor %.2f%%) — selling $%.2f",
+                ticker, current_price, pct_gain * 100, floor_pct * 100, sell_usd,
             )
-            place_sell(ticker, shares)
+            place_sell_dollars(ticker, sell_usd)
             del positions[ticker]
             save_positions(positions)
             return
 
-    # Stop loss logic:
-    # - Before any tiers trigger: hard stop at -3%
-    # - After first tier triggers: tighten to -1% (breakeven stop)
-    # This ensures a winner can never fully reverse into a meaningful loss
-    if not tiers_triggered:
-        stop_pct = HARD_STOP_LOSS_PCT
-    else:
-        stop_pct = BREAKEVEN_STOP_PCT
-
+    # Stop loss:
+    # - Before any tier: hard stop at -3%
+    # - After first tier: tighten to -1% breakeven stop
+    stop_pct = HARD_STOP_LOSS_PCT if not tiers_triggered else BREAKEVEN_STOP_PCT
     if pct_gain <= stop_pct:
+        sell_usd = round(dollars_remaining * (1 + pct_gain), 2)
         stop_label = "HARD STOP LOSS" if not tiers_triggered else "BREAKEVEN STOP"
         logger.info(
-            "%s for %s: price $%.2f (%.2f%% <= stop %.2f%%)",
-            stop_label, ticker, current_price, pct_gain * 100, stop_pct * 100,
+            "%s for %s: price $%.2f (%.2f%%) — selling $%.2f",
+            stop_label, ticker, current_price, pct_gain * 100, sell_usd,
         )
-        place_sell(ticker, shares)
+        place_sell_dollars(ticker, sell_usd)
         del positions[ticker]
         save_positions(positions)
         return
 
-    # Tiered profit taking
+    # Tiered profit taking — sell % of original dollars invested
     for tier_pct, fraction in TIERS:
         tier_label = f"{tier_pct:.3f}"
         if tier_label in tiers_triggered:
             continue
         if pct_gain >= tier_pct:
-            sell_shares = max(1, math.floor(original_shares * fraction))
-            sell_shares = min(sell_shares, shares)  # can't sell more than held
+            sell_usd = round(dollars_invested * fraction * (1 + pct_gain), 2)
+            sell_usd = min(sell_usd, dollars_remaining)
             logger.info(
-                "TIER %.1f%% hit for %s: selling %d shares (%.0f%% of original)",
-                tier_pct * 100, ticker, sell_shares, fraction * 100,
+                "TIER +%.1f%% hit for %s: selling $%.2f (%.0f%% of original $%.2f)",
+                tier_pct * 100, ticker, sell_usd, fraction * 100, dollars_invested,
             )
-            success = place_sell(ticker, sell_shares)
+            success = place_sell_dollars(ticker, sell_usd)
             if success:
-                pos["shares"] -= sell_shares
+                pos["dollars_remaining"] -= round(dollars_invested * fraction, 2)
                 pos["tiers_triggered"].append(tier_label)
-                shares = pos["shares"]
-                if shares <= 0:
+                dollars_remaining = pos["dollars_remaining"]
+                if dollars_remaining <= 0.50:
                     del positions[ticker]
                     save_positions(positions)
                     return
@@ -1013,8 +1002,12 @@ def close_all_positions(positions: dict) -> None:
     logger.info("MARKET CLOSE — closing all %d open positions.", len(positions))
     for ticker in list(positions.keys()):
         pos = positions.get(ticker)
-        if pos and pos.get("shares", 0) > 0:
-            place_sell(ticker, pos["shares"])
+        if pos and pos.get("dollars_remaining", 0) > 0.50:
+            current_price = get_current_price(ticker)
+            entry = pos.get("entry_price", 1)
+            pct_gain = ((current_price - entry) / entry) if current_price else 0
+            sell_usd = round(pos["dollars_remaining"] * (1 + pct_gain), 2)
+            place_sell_dollars(ticker, sell_usd)
         del positions[ticker]
     save_positions(positions)
 
@@ -1033,14 +1026,18 @@ def print_summary(positions: dict, scan_entries: list) -> None:
         for ticker, pos in positions.items():
             price = get_current_price(ticker)
             if price:
-                pnl = (price - pos["entry_price"]) * pos["shares"]
-                pct = (price - pos["entry_price"]) / pos["entry_price"] * 100
+                entry = pos["entry_price"]
+                pct = (price - entry) / entry * 100
+                dollars_rem = pos.get("dollars_remaining", 0)
+                dollars_inv = pos.get("dollars_invested", 0)
+                current_value = dollars_rem * (1 + (price - entry) / entry)
+                pnl = current_value - dollars_rem
                 news_flag = pos.get("news_flag", "")
                 news_display = f"  [{news_flag}]" if "⚠️" in news_flag else ""
                 print(
-                    f"    {ticker:6s}  entry=${pos['entry_price']:.2f}  "
-                    f"curr=${price:.2f}  shares={pos['shares']}  "
-                    f"P&L=${pnl:+.2f} ({pct:+.1f}%){news_display}"
+                    f"    {ticker:6s}  entry=${entry:.2f}  curr=${price:.2f}  "
+                    f"invested=${dollars_inv:.2f}  remaining=${dollars_rem:.2f}  "
+                    f"P&L={pct:+.1f}%{news_display}"
                 )
     else:
         print("  No open positions.")
