@@ -70,39 +70,39 @@ HARD_STOP_LOSS_PCT = -0.03
 
 TICKER_UNIVERSE = [
     # Meme / high-vol retail favorites
-    "AMC", "GME", "BBBY", "SPCE", "MARA", "RIOT", "PLUG", "FCEL",
-    "NKLA", "WKHS", "GOEV", "CLOV", "WISH", "SNDL", "TLRY", "ACB",
-    "APHA", "HEXO", "CGC", "CRON", "PLTR", "BB", "NOK", "EXPR",
-    "NAKD", "KOSS", "UWMC", "CLNE", "RIDE", "XL", "FSR", "LCID",
+    "AMC", "GME", "SPCE", "MARA", "RIOT", "PLUG", "FCEL",
+    "WKHS", "CLOV", "SNDL", "TLRY", "ACB",
+    "CGC", "CRON", "PLTR", "BB", "NOK", "EXPR",
+    "KOSS", "UWMC", "CLNE", "RIDE", "XL", "FSR", "LCID",
     "RIVN", "ARVL", "HYLN", "SOLO", "AYRO", "PTRA", "BLNK", "CHPT",
     # Biotech / pharma small-cap
-    "SAVA", "OCGN", "NVAX", "SRNE", "ATOS", "VERB", "MRIN", "OBSV",
-    "ZYNE", "TNXP", "NKTR", "AGTC", "VXRT", "ADMA", "PRTS", "ORMP",
-    "EYEG", "GILD", "SGEN", "CRSP", "EDIT", "NTLA", "BEAM", "VERV",
+    "OCGN", "NVAX", "ATOS",
+    "TNXP", "NKTR", "VXRT", "ADMA", "PRTS", "ORMP",
+    "EYEG", "GILD", "CRSP", "EDIT", "NTLA", "BEAM",
     "PMVP", "IMVT", "ARDX", "LGVN", "RCUS", "CDNA", "PACB", "FATE",
     # Tech small/mid
-    "BBAI", "PAYO", "BRZE", "DDOG", "CFLT", "MNDY", "GTLB", "SMAR",
-    "LSPD", "TOST", "OLO", "RELY", "ALKT", "HIMS", "OPEN", "OPFI",
+    "BBAI", "PAYO", "BRZE", "DDOG", "MNDY", "GTLB",
+    "LSPD", "TOST", "RELY", "ALKT", "HIMS", "OPEN", "OPFI",
     "AFRM", "UPST", "SOFI", "HOOD", "COUR", "DUOL", "DOCN", "FSLY",
-    "ESTC", "SAIL", "WEAV", "NRDS", "KVYO", "RDDT", "IBTA", "KYNDRYL",
+    "ESTC", "SAIL", "WEAV", "NRDS", "KVYO", "RDDT", "IBTA",
     # Energy / clean energy
-    "SUNW", "MAXN", "SPWR", "NOVA", "ARRY", "ENPH", "RUN", "FTCI",
-    "FLNC", "STEM", "BLDP", "ITM", "CWEN", "NOVA", "AZRE", "REGI",
+    "MAXN", "SPWR", "ARRY", "ENPH", "RUN", "FTCI",
+    "FLNC", "STEM", "BLDP", "ITM", "CWEN",
     # Mining / metals
-    "MVIS", "MP", "NOVN", "USAS", "EXK", "AG", "HL", "CDE", "PAAS",
-    "SILV", "MUX", "FSM", "BCML", "MFAC",
+    "MVIS", "MP", "USAS", "EXK", "AG", "HL", "CDE", "PAAS",
+    "MUX", "FSM", "BCML",
     # Consumer / retail small-cap
-    "LOVE", "PRPL", "LAZY", "BIGC", "REAL", "POSH", "RVLV", "CPNG",
-    "WISH", "OTRK", "XELA", "TLGA", "GREE", "FFIE", "MULN", "EVGO",
+    "LOVE", "PRPL", "REAL", "RVLV", "CPNG",
+    "OTRK", "XELA", "GREE", "EVGO",
     # Financial small-cap
-    "GPRO", "LMND", "ROOT", "MILE", "KPLT", "LPRO", "TREE", "UWMC",
-    "GHIV", "CUBI", "PRAA", "ECPG", "ENVA", "ATLC", "MFIN", "NICK",
+    "GPRO", "LMND", "ROOT", "KPLT", "LPRO", "TREE", "UWMC",
+    "CUBI", "PRAA", "ECPG", "ENVA", "ATLC", "MFIN",
     # Misc momentum names
-    "TTOO", "NUO", "CELH", "BYND", "OATLY", "PNTM", "SKIN", "ACMR",
-    "XPEV", "NIO", "LI", "NKLA", "SOLO", "ZEV", "IDEX", "GFAI",
-    "BKKT", "COIN", "MSTR", "BTBT", "BITF", "HUT", "CLSK", "CIFR",
-    "BTCY", "WULF", "IREN", "CORZ", "ARBK", "DMGI", "SOS", "BTCM",
-    "NCTY", "EBON", "CAN", "BRPHF", "FRMO",
+    "TTOO", "CELH", "BYND", "SKIN", "ACMR",
+    "XPEV", "NIO", "LI", "SOLO", "GFAI",
+    "BKKT", "COIN", "MSTR", "BTBT", "HUT", "CLSK", "CIFR",
+    "BTCY", "WULF", "IREN", "CORZ", "ARBK", "SOS",
+    "NCTY", "EBON", "CAN", "FRMO",
 ]
 # deduplicate while preserving order
 seen = set()
