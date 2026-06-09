@@ -26,6 +26,10 @@ import robin_stocks.robinhood as r
 # Configuration
 # ---------------------------------------------------------------------------
 
+# Set DRY_RUN = True to scan and log signals without placing any real orders.
+# Great for testing. Set to False when you're ready to trade live.
+DRY_RUN = True
+
 POSITIONS_FILE = Path(__file__).parent / "positions.json"
 LOG_FILE = Path(__file__).parent / "trader.log"
 POSITION_SIZE_USD = 50.0
@@ -197,6 +201,9 @@ def place_buy(ticker: str, shares: int) -> bool:
     if shares < 1:
         logger.warning("Attempted to buy 0 shares of %s — skipping.", ticker)
         return False
+    if DRY_RUN:
+        logger.info("[DRY RUN] Would BUY %d shares of %s", shares, ticker)
+        return True
     try:
         result = r.orders.order_buy_market(ticker, shares)
         logger.info("BUY %d shares of %s — order id: %s", shares, ticker, result.get("id"))
@@ -210,6 +217,9 @@ def place_sell(ticker: str, shares: int) -> bool:
     if shares < 1:
         logger.warning("Attempted to sell 0 shares of %s — skipping.", ticker)
         return False
+    if DRY_RUN:
+        logger.info("[DRY RUN] Would SELL %d shares of %s", shares, ticker)
+        return True
     try:
         result = r.orders.order_sell_market(ticker, shares)
         logger.info("SELL %d shares of %s — order id: %s", shares, ticker, result.get("id"))
@@ -625,6 +635,10 @@ def print_summary(positions: dict, scan_entries: list) -> None:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
+    if DRY_RUN:
+        logger.info("=" * 60)
+        logger.info("  DRY RUN MODE — no real orders will be placed")
+        logger.info("=" * 60)
     logger.info("Starting day trading bot.")
 
     if not rh_login():
