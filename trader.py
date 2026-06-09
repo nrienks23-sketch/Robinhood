@@ -1241,6 +1241,40 @@ def main() -> None:
                         else:
                             print(f"  {ticker} not in signal list — skipping.")
 
+            # Manual trade tracker — ask if they bought anything on their own
+            print("\n  Did you manually buy anything? Enter TICKER PRICE (e.g. NVDA 124.50)")
+            print("  or press Enter to skip:")
+            try:
+                manual = input("  > ").strip().upper()
+            except EOFError:
+                manual = ""
+            if manual:
+                parts = manual.split()
+                if len(parts) == 2:
+                    try:
+                        mticker = parts[0]
+                        mprice = float(parts[1])
+                        if mticker not in positions:
+                            positions[mticker] = {
+                                "entry_price": mprice,
+                                "dollars_invested": POSITION_SIZE_USD,
+                                "dollars_remaining": POSITION_SIZE_USD,
+                                "entry_time": get_eastern_now().isoformat(),
+                                "high_water_mark": mprice,
+                                "tiers_triggered": [],
+                                "trailing_stop_active": False,
+                                "trailing_stop_floor_pct": None,
+                                "news_flag": "manual entry",
+                            }
+                            save_positions(positions)
+                            print(f"  ✅ Tracking {mticker} @ ${mprice:.2f} — I'll tell you when to trim/sell.")
+                        else:
+                            print(f"  Already tracking {mticker}.")
+                    except ValueError:
+                        print("  Couldn't parse that. Format is: TICKER PRICE (e.g. NVDA 124.50)")
+                else:
+                    print("  Format is: TICKER PRICE (e.g. NVDA 124.50)")
+
         except KeyboardInterrupt:
             logger.info("KeyboardInterrupt received — shutting down.")
             break
