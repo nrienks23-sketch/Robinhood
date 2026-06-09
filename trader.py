@@ -597,6 +597,12 @@ def check_entry_signals(ticker: str) -> tuple[int, float | None, str]:
 
     signals = {}
 
+    # Hard filter: skip stocks that already ran today (>8% up = already moved)
+    prev_close = float(close.iloc[-2]) if len(close) >= 2 else current_price
+    today_change_pct = (current_price - prev_close) / prev_close if prev_close > 0 else 0
+    if today_change_pct > 0.08:
+        return 0, current_price, f"already up {today_change_pct*100:.1f}% today — skip"
+
     # 1. Volume spike
     now_et = datetime.now(pytz.timezone("America/New_York"))
     market_open_dt = now_et.replace(hour=9, minute=30, second=0, microsecond=0)
@@ -634,8 +640,14 @@ def check_entry_signals(ticker: str) -> tuple[int, float | None, str]:
     signals["candle"] = (pattern_found, pattern_desc)
 
     score = sum(1 for v, _ in signals.values() if v)
+
+    # Quiet accumulation bonus label (volume building, price not broken out yet)
+    change_label = f"today {today_change_pct*100:+.1f}%"
+    if signals["volume"][0] and abs(today_change_pct) < 0.03:
+        change_label += " 🔍 QUIET"
+
     detail = " | ".join(f"{'✅' if v else '❌'} {desc}" for _, (v, desc) in signals.items())
-    full_detail = f"score={score}/6 | ${current_price:.2f} | {detail}"
+    full_detail = f"score={score}/6 | ${current_price:.2f} | {change_label} | {detail}"
 
     return score, current_price, full_detail
 
@@ -647,8 +659,8 @@ def get_dynamic_universe() -> list[str]:
     """
     Pull a live universe from Finviz each morning:
     - Market cap $150M–$20B (small + mid cap)
-    - Up on the day
     - Average volume over 500K (liquid enough to trade)
+    - Pulls both flat/slightly-up stocks (pre-breakout) AND up stocks
     Falls back to the hardcoded TICKER_UNIVERSE if Finviz is unavailable.
     """
     if not FINVIZ_AVAILABLE:
@@ -656,20 +668,21 @@ def get_dynamic_universe() -> list[str]:
         return TICKER_UNIVERSE
 
     tickers = []
-    # Run two passes: small cap and mid cap
+    # Two passes per cap tier: "Up" (any up) catches broad momentum,
+    # no Change filter catches flat/consolidating stocks building quietly
     for cap_filter in ['Small ($300mln to $2bln)', 'Mid ($2bln to $10bln)']:
-        try:
-            screener = FinvizOverview()
-            screener.set_filter(filters_dict={
-                'Market Cap.': cap_filter,
-                'Average Volume': 'Over 500K',
-                'Change': 'Up',
-            })
-            df = screener.screener_view(verbose=0)
-            if df is not None and not df.empty:
-                tickers.extend(df['Ticker'].tolist())
-        except Exception as exc:
-            logger.warning("Finviz screener failed for %s: %s", cap_filter, exc)
+        for change_filter in ['Up', None]:
+            try:
+                screener = FinvizOverview()
+                f = {'Market Cap.': cap_filter, 'Average Volume': 'Over 500K'}
+                if change_filter:
+                    f['Change'] = change_filter
+                screener.set_filter(filters_dict=f)
+                df = screener.screener_view(verbose=0)
+                if df is not None and not df.empty:
+                    tickers.extend(df['Ticker'].tolist())
+            except Exception as exc:
+                logger.warning("Finviz screener failed for %s/%s: %s", cap_filter, change_filter, exc)
 
     # Also grab micro cap ($150M–$300M) separately
     try:
@@ -677,7 +690,6 @@ def get_dynamic_universe() -> list[str]:
         screener.set_filter(filters_dict={
             'Market Cap.': 'Micro ($50mln to $300mln)',
             'Average Volume': 'Over 500K',
-            'Change': 'Up',
         })
         df = screener.screener_view(verbose=0)
         if df is not None and not df.empty:
