@@ -72,13 +72,13 @@ TICKER_UNIVERSE = [
     # Meme / high-vol retail favorites
     "AMC", "GME", "SPCE", "MARA", "RIOT", "PLUG", "FCEL",
     "WKHS", "CLOV", "SNDL", "TLRY", "ACB",
-    "CGC", "CRON", "PLTR", "BB", "NOK", "EXPR",
-    "KOSS", "UWMC", "CLNE", "RIDE", "XL", "FSR", "LCID",
-    "RIVN", "ARVL", "HYLN", "SOLO", "AYRO", "PTRA", "BLNK", "CHPT",
+    "CGC", "CRON", "PLTR", "BB", "NOK",
+    "KOSS", "UWMC", "CLNE", "LCID",
+    "RIVN", "HYLN", "BLNK", "CHPT",
     # Biotech / pharma small-cap
     "OCGN", "NVAX", "ATOS",
     "TNXP", "NKTR", "VXRT", "ADMA", "PRTS", "ORMP",
-    "EYEG", "GILD", "CRSP", "EDIT", "NTLA", "BEAM",
+    "GILD", "CRSP", "EDIT", "NTLA", "BEAM",
     "PMVP", "IMVT", "ARDX", "LGVN", "RCUS", "CDNA", "PACB", "FATE",
     # Tech small/mid
     "BBAI", "PAYO", "BRZE", "DDOG", "MNDY", "GTLB",
@@ -86,23 +86,21 @@ TICKER_UNIVERSE = [
     "AFRM", "UPST", "SOFI", "HOOD", "COUR", "DUOL", "DOCN", "FSLY",
     "ESTC", "SAIL", "WEAV", "NRDS", "KVYO", "RDDT", "IBTA",
     # Energy / clean energy
-    "MAXN", "SPWR", "ARRY", "ENPH", "RUN", "FTCI",
+    "SPWR", "ARRY", "ENPH", "RUN", "FTCI",
     "FLNC", "STEM", "BLDP", "ITM", "CWEN",
     # Mining / metals
     "MVIS", "MP", "USAS", "EXK", "AG", "HL", "CDE", "PAAS",
-    "MUX", "FSM", "BCML",
+    "MUX", "FSM",
     # Consumer / retail small-cap
-    "LOVE", "PRPL", "REAL", "RVLV", "CPNG",
-    "OTRK", "XELA", "GREE", "EVGO",
+    "LOVE", "PRPL", "REAL", "RVLV", "CPNG", "GREE", "EVGO",
     # Financial small-cap
-    "GPRO", "LMND", "ROOT", "KPLT", "LPRO", "TREE", "UWMC",
+    "GPRO", "LMND", "ROOT", "KPLT", "LPRO", "TREE",
     "CUBI", "PRAA", "ECPG", "ENVA", "ATLC", "MFIN",
     # Misc momentum names
-    "TTOO", "CELH", "BYND", "SKIN", "ACMR",
-    "XPEV", "NIO", "LI", "SOLO", "GFAI",
+    "CELH", "BYND", "SKIN", "ACMR",
+    "XPEV", "NIO", "LI", "GFAI",
     "BKKT", "COIN", "MSTR", "BTBT", "HUT", "CLSK", "CIFR",
-    "BTCY", "WULF", "IREN", "CORZ", "ARBK", "SOS",
-    "NCTY", "EBON", "CAN", "FRMO",
+    "WULF", "IREN", "CORZ", "ARBK", "SOS", "EBON", "CAN",
 ]
 # deduplicate while preserving order
 seen = set()
