@@ -509,12 +509,10 @@ def check_news_catalyst(ticker: str) -> tuple[bool, str]:
     except Exception as exc:
         logger.debug("Google News fetch failed for %s: %s", ticker, exc)
 
-    # --- Decision ---
-    if negative_hit:
-        return False, "BLOCKED — " + " | ".join(summary_parts)
-
+    # --- Summary (never blocks — just flags for awareness) ---
     summary = " | ".join(summary_parts) if summary_parts else "no news found"
-    return True, f"news OK (score={positive_score}) — {summary}"
+    flag = "⚠️ NEGATIVE NEWS FLAG" if negative_hit else "✅ news clear"
+    return True, f"{flag} (score={positive_score}) — {summary}"
 
 
 def check_entry_signals(ticker: str) -> tuple[bool, float | None, str]:
@@ -522,11 +520,9 @@ def check_entry_signals(ticker: str) -> tuple[bool, float | None, str]:
     Returns (should_enter, current_price, reason).
     reason is a human-readable string explaining the outcome.
     """
-    # --- News / catalyst check (runs first — bail early on bad news) ---
-    news_ok, news_summary = check_news_catalyst(ticker)
-    if not news_ok:
-        return False, None, news_summary
-    logger.debug("News check passed for %s: %s", ticker, news_summary)
+    # --- News / catalyst check (flags only — never blocks entry) ---
+    _, news_summary = check_news_catalyst(ticker)
+    logger.info("News flag for %s: %s", ticker, news_summary)
 
     df = fetch_ohlcv(ticker, period="1y", interval="1d")
     if df is None or len(df) < 200:
@@ -826,6 +822,8 @@ def enter_position(ticker: str, price: float, positions: dict) -> None:
         logger.warning("Cannot buy %s at $%.2f — price too high for $%d budget.", ticker, price, POSITION_SIZE_USD)
         return
 
+    _, news_summary = check_news_catalyst(ticker)
+
     success = place_buy(ticker, shares)
     if not success:
         return
@@ -839,10 +837,11 @@ def enter_position(ticker: str, price: float, positions: dict) -> None:
         "tiers_triggered": [],
         "trailing_stop_active": False,
         "trailing_stop_floor_pct": None,
+        "news_flag": news_summary,
     }
     logger.info(
-        "ENTERED %s: %d shares @ $%.2f (cost ~$%.2f)",
-        ticker, shares, price, shares * price,
+        "ENTERED %s: %d shares @ $%.2f (cost ~$%.2f) | %s",
+        ticker, shares, price, shares * price, news_summary,
     )
     save_positions(positions)
 
@@ -975,10 +974,12 @@ def print_summary(positions: dict, scan_entries: list) -> None:
             if price:
                 pnl = (price - pos["entry_price"]) * pos["shares"]
                 pct = (price - pos["entry_price"]) / pos["entry_price"] * 100
+                news_flag = pos.get("news_flag", "")
+                news_display = f"  [{news_flag}]" if "⚠️" in news_flag else ""
                 print(
                     f"    {ticker:6s}  entry=${pos['entry_price']:.2f}  "
                     f"curr=${price:.2f}  shares={pos['shares']}  "
-                    f"P&L=${pnl:+.2f} ({pct:+.1f}%)"
+                    f"P&L=${pnl:+.2f} ({pct:+.1f}%){news_display}"
                 )
     else:
         print("  No open positions.")
