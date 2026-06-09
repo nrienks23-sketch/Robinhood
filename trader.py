@@ -1058,7 +1058,7 @@ def print_summary(positions: dict, scan_entries: list) -> None:
             bucket = scan_entries.get(score, [])
             if not bucket:
                 continue
-            label = {6: "🔥 6/6 — AUTO ENTER", 5: "✅ 5/6 — AUTO ENTER", 4: "👀 4/6 — WATCH ONLY"}[score]
+            label = {6: "🔥 6/6", 5: "✅ 5/6", 4: "👀 4/6 — WATCH ONLY"}[score]
             print(f"\n  {label} ({len(bucket)} stocks):")
             for ticker, price, detail in bucket:
                 print(f"    {ticker:6s} @ ${price:.2f}  |  {detail}")
@@ -1134,16 +1134,34 @@ def main() -> None:
             # Scan for new entries — returns {6: [...], 5: [...], 4: [...]}
             new_entries = scan_for_entries(positions)
 
-            # Auto-enter 6/6 and 5/6 signals, show 4/6 as watch only
-            for score in [6, 5]:
-                for ticker, price, detail in new_entries.get(score, []):
-                    if len(positions) >= MAX_POSITIONS:
-                        logger.info("Max positions (%d) reached — skipping.", MAX_POSITIONS)
-                        break
-                    if ticker not in positions:
-                        enter_position(ticker, price, positions)
-
             print_summary(positions, new_entries)
+
+            # Ask for buy confirmation if there are actionable signals
+            buyable = [
+                (score, ticker, price, detail)
+                for score in [6, 5]
+                for ticker, price, detail in new_entries.get(score, [])
+                if ticker not in positions
+            ]
+            if buyable and len(positions) < MAX_POSITIONS:
+                print("  Enter ticker(s) to BUY (comma-separated), or press Enter to skip:")
+                print("  Available slots: %d / %d" % (MAX_POSITIONS - len(positions), MAX_POSITIONS))
+                try:
+                    raw = input("  > ").strip().upper()
+                except EOFError:
+                    raw = ""
+                if raw:
+                    chosen = [t.strip() for t in raw.split(",") if t.strip()]
+                    buyable_map = {ticker: (price, detail) for _, ticker, price, detail in buyable}
+                    for ticker in chosen:
+                        if len(positions) >= MAX_POSITIONS:
+                            print("  Max positions reached — stopping buys.")
+                            break
+                        if ticker in buyable_map:
+                            price, detail = buyable_map[ticker]
+                            enter_position(ticker, price, positions)
+                        else:
+                            print(f"  {ticker} not in signal list — skipping.")
 
         except KeyboardInterrupt:
             logger.info("KeyboardInterrupt received — shutting down.")
