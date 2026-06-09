@@ -47,7 +47,7 @@ DRY_RUN = True
 POSITIONS_FILE = Path(__file__).parent / "positions.json"
 LOG_FILE = Path(__file__).parent / "trader.log"
 POSITION_SIZE_USD = 50.0
-SCAN_INTERVAL_SECONDS = 30
+SCAN_INTERVAL_SECONDS = 300  # 5 minutes
 PREMARKET_START = dtime(8, 0, 0)   # start pre-market scan at 8:00 AM ET
 MARKET_OPEN = dtime(9, 30, 0)
 MARKET_CLOSE = dtime(16, 0, 0)
@@ -1084,20 +1084,47 @@ def print_summary(positions: dict, scan_entries: list) -> None:
         print(f"  Open positions ({len(positions)}):")
         for ticker, pos in positions.items():
             price = get_current_price(ticker)
-            if price:
-                entry = pos["entry_price"]
-                pct = (price - entry) / entry * 100
-                dollars_rem = pos.get("dollars_remaining", 0)
-                dollars_inv = pos.get("dollars_invested", 0)
-                current_value = dollars_rem * (1 + (price - entry) / entry)
-                pnl = current_value - dollars_rem
-                news_flag = pos.get("news_flag", "")
-                news_display = f"  [{news_flag}]" if "⚠️" in news_flag else ""
-                print(
-                    f"    {ticker:6s}  entry=${entry:.2f}  curr=${price:.2f}  "
-                    f"invested=${dollars_inv:.2f}  remaining=${dollars_rem:.2f}  "
-                    f"P&L={pct:+.1f}%{news_display}"
-                )
+            if not price:
+                print(f"    {ticker:6s}  ⚠️  Could not fetch price")
+                continue
+            entry = pos["entry_price"]
+            pct = (price - entry) / entry * 100
+            dollars_rem = pos.get("dollars_remaining", 0)
+            dollars_inv = pos.get("dollars_invested", 0)
+            tiers_done = pos.get("tiers_triggered", [])
+            trailing_active = pos.get("trailing_stop_active", False)
+            trailing_floor = pos.get("trailing_stop_floor_pct")
+            news_flag = pos.get("news_flag", "")
+            news_display = f"  [{news_flag}]" if "⚠️" in news_flag else ""
+
+            # Figure out what action to show
+            hard_stop = entry * (1 + HARD_STOP_LOSS_PCT)
+            breakeven_stop = entry * (1 + BREAKEVEN_STOP_PCT)
+            if pct <= HARD_STOP_LOSS_PCT * 100:
+                action = "🛑 SELL NOW — hard stop hit"
+            elif tiers_done and pct <= BREAKEVEN_STOP_PCT * 100:
+                action = "🛑 SELL — breakeven stop hit"
+            elif trailing_active and trailing_floor and pct <= trailing_floor * 100:
+                action = "🛑 SELL — trailing stop hit"
+            elif trailing_active:
+                action = f"⚡ TRAILING STOP active (floor {trailing_floor*100:.1f}%)"
+            else:
+                # Check next tier
+                next_tier = next(((t, frac) for t, frac in TIERS if t not in [x[0] for x in tiers_done]), None)
+                if next_tier:
+                    t_pct, t_frac = next_tier
+                    if pct >= t_pct * 100:
+                        action = f"✂️  TRIM {int(t_frac*100)}% — +{t_pct*100:.0f}% tier reached"
+                    else:
+                        action = f"⏳ hold — next trim at +{t_pct*100:.0f}% (currently {pct:+.1f}%)"
+                else:
+                    action = f"⏳ hold {pct:+.1f}%"
+
+            print(
+                f"    {ticker:6s}  entry=${entry:.2f}  now=${price:.2f}  "
+                f"P&L={pct:+.1f}%  remaining=${dollars_rem:.2f}  "
+                f"→ {action}{news_display}"
+            )
     else:
         print("  No open positions.")
 
