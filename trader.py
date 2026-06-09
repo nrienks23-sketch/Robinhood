@@ -896,104 +896,39 @@ def load_premarket_watchlist() -> list[str]:
 
 
 def afterhours_scan(positions: dict) -> None:
-    """
-    Runs 4:00–8:00 PM ET every 5 minutes.
-    1. Shows after-hours price + P&L on all open positions.
-    2. Scans universe for stocks moving after hours — builds tomorrow's watchlist.
-    """
+    """Runs 4:00–8:00 PM ET — monitors open positions with after-hours prices."""
     now_str = get_eastern_now().strftime("%Y-%m-%d %H:%M:%S ET")
     print("\n" + "=" * 60)
     print(f"  AFTER-HOURS UPDATE  |  {now_str}")
     print("=" * 60)
 
-    # 1. Monitor open positions with after-hours prices
     if positions:
         print(f"\n  Open positions (after-hours prices):")
         for ticker, pos in positions.items():
             try:
-                ah_df = yf.download(ticker, period="1d", interval="1m",
-                                    progress=False, auto_adjust=True, prepost=True)
-                if ah_df is not None and not ah_df.empty:
-                    if isinstance(ah_df.columns, pd.MultiIndex):
-                        ah_df.columns = ah_df.columns.get_level_values(0)
-                    ah_df.columns = [c.lower() for c in ah_df.columns]
-                    ah_price = float(ah_df["close"].iloc[-1])
-                else:
-                    ah_price = get_current_price(ticker)
+                ah_price = get_current_price(ticker)
                 if not ah_price:
                     continue
                 entry = pos["entry_price"]
                 pct = (ah_price - entry) / entry * 100
                 dollars_rem = pos.get("dollars_remaining", 0)
-
-                # Show sell/trim recommendation based on after-hours price
-                hard_stop = HARD_STOP_LOSS_PCT * 100
                 tiers_done = [t for t, _ in pos.get("tiers_triggered", [])]
                 next_tier = next(((t, frac) for t, frac in TIERS if t not in tiers_done), None)
-                if pct <= hard_stop:
-                    action = "🛑 CONSIDER SELLING — at hard stop after hours"
+                if pct <= HARD_STOP_LOSS_PCT * 100:
+                    action = "🛑 CONSIDER SELLING — at hard stop"
                 elif next_tier and pct >= next_tier[0] * 100:
-                    action = f"✂️  TRIM {int(next_tier[1]*100)}% at open — +{next_tier[0]*100:.0f}% tier"
+                    action = f"✂️  TRIM {int(next_tier[1]*100)}% at open — +{next_tier[0]*100:.0f}% tier hit"
                 else:
-                    action = f"⏳ hold — P&L {pct:+.1f}% after hours"
-
-                print(f"    {ticker:6s}  entry=${entry:.2f}  AH=${ah_price:.2f}  "
+                    action = f"⏳ hold — P&L {pct:+.1f}%"
+                print(f"    {ticker:6s}  entry=${entry:.2f}  now=${ah_price:.2f}  "
                       f"P&L={pct:+.1f}%  remaining=${dollars_rem:.2f}  → {action}")
             except Exception as exc:
-                logger.warning("After-hours price fetch failed for %s: %s", ticker, exc)
+                logger.warning("After-hours check failed for %s: %s", ticker, exc)
     else:
         print("\n  No open positions to monitor.")
 
-    # 2. Scan for after-hours movers to watch tomorrow
-    print(f"\n  Scanning for after-hours movers (top 100 tickers)...")
-    try:
-        universe = get_dynamic_universe()
-    except Exception as exc:
-        logger.warning("Could not fetch universe for AH scan: %s", exc)
-        universe = []
-    movers = []
-    for i, ticker in enumerate(universe[:100]):  # limit to 100 for speed
-        try:
-            # Single call with prepost=True gives both regular and AH bars
-            ah_df = yf.download(ticker, period="2d", interval="5m",
-                                progress=False, auto_adjust=True, prepost=True)
-            if ah_df is None or ah_df.empty:
-                continue
-            if isinstance(ah_df.columns, pd.MultiIndex):
-                ah_df.columns = ah_df.columns.get_level_values(0)
-            ah_df.columns = [c.lower() for c in ah_df.columns]
-
-            close_price = float(ah_df["close"].iloc[-1])
-            # Regular close = last bar at or before 4pm ET
-            eastern = pytz.timezone("America/New_York")
-            ah_df.index = ah_df.index.tz_convert(eastern) if ah_df.index.tzinfo else ah_df.index
-            reg_bars = ah_df[ah_df.index.time <= dtime(16, 0, 0)]
-            if reg_bars.empty:
-                continue
-            reg_close = float(reg_bars["close"].iloc[-1])
-
-            ah_chg = (close_price - reg_close) / reg_close * 100
-            ah_vol = float(ah_df[ah_df.index.time > dtime(16, 0, 0)]["volume"].sum())
-
-            # Flag stocks moving >1% after hours with meaningful volume
-            if abs(ah_chg) >= 1.0 and ah_vol > 5000:
-                movers.append((ticker, close_price, ah_chg, ah_vol))
-        except Exception:
-            pass
-        if i % 20 == 0:
-            time.sleep(0.2)
-
-    movers.sort(key=lambda x: abs(x[2]), reverse=True)
-
-    print(f"\n  After-hours movers (top 15 for tomorrow):")
-    if movers:
-        for ticker, price, chg, vol in movers[:15]:
-            arrow = "🔺" if chg > 0 else "🔻"
-            print(f"    {ticker:6s} @ ${price:.2f}  {arrow} {chg:+.1f}% AH  vol={int(vol):,}")
-    else:
-        print("    No significant movers found.")
-
     print("=" * 60 + "\n")
+
 
 
 def scan_for_entries(existing_positions: dict) -> dict:
