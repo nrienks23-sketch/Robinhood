@@ -1,5 +1,5 @@
 # Install dependencies:
-# pip install robin_stocks yfinance pandas_ta pandas numpy pytz
+# pip install robin_stocks yfinance pandas_ta pandas numpy pytz finvizfinance
 
 import os
 import json
@@ -19,6 +19,12 @@ try:
     PANDAS_TA_AVAILABLE = True
 except ImportError:
     PANDAS_TA_AVAILABLE = False
+
+try:
+    from finvizfinance.screener.overview import Overview as FinvizOverview
+    FINVIZ_AVAILABLE = True
+except ImportError:
+    FINVIZ_AVAILABLE = False
 
 import robin_stocks.robinhood as r
 
@@ -405,6 +411,59 @@ def check_entry_signals(ticker: str) -> tuple[bool, float | None, str]:
 # Scanning
 # ---------------------------------------------------------------------------
 
+def get_dynamic_universe() -> list[str]:
+    """
+    Pull a live universe from Finviz each morning:
+    - Market cap $150M–$20B (small + mid cap)
+    - Up on the day
+    - Average volume over 500K (liquid enough to trade)
+    Falls back to the hardcoded TICKER_UNIVERSE if Finviz is unavailable.
+    """
+    if not FINVIZ_AVAILABLE:
+        logger.warning("finvizfinance not installed — using hardcoded universe.")
+        return TICKER_UNIVERSE
+
+    tickers = []
+    # Run two passes: small cap and mid cap
+    for cap_filter in ['Small ($300mln to $2bln)', 'Mid ($2bln to $10bln)']:
+        try:
+            screener = FinvizOverview()
+            screener.set_filter(filters_dict={
+                'Market Cap.': cap_filter,
+                'Average Volume': 'Over 500K',
+                'Change': 'Up',
+            })
+            df = screener.screener_view(verbose=0)
+            if df is not None and not df.empty:
+                tickers.extend(df['Ticker'].tolist())
+        except Exception as exc:
+            logger.warning("Finviz screener failed for %s: %s", cap_filter, exc)
+
+    # Also grab micro cap ($150M–$300M) separately
+    try:
+        screener = FinvizOverview()
+        screener.set_filter(filters_dict={
+            'Market Cap.': 'Micro ($50mln to $300mln)',
+            'Average Volume': 'Over 500K',
+            'Change': 'Up',
+        })
+        df = screener.screener_view(verbose=0)
+        if df is not None and not df.empty:
+            tickers.extend(df['Ticker'].tolist())
+    except Exception as exc:
+        logger.warning("Finviz micro-cap screener failed: %s", exc)
+
+    # Deduplicate
+    tickers = list(dict.fromkeys(tickers))
+
+    if not tickers:
+        logger.warning("Finviz returned no results — falling back to hardcoded universe.")
+        return TICKER_UNIVERSE
+
+    logger.info("Dynamic universe: %d tickers from Finviz screener.", len(tickers))
+    return tickers
+
+
 def fast_volume_filter(tickers: list[str]) -> list[str]:
     """Quick pre-filter: only keep tickers with a recent volume spike."""
     survivors = []
@@ -454,8 +513,9 @@ def premarket_scan() -> None:
     """
     logger.info("PRE-MARKET SCAN starting...")
     watchlist = []
+    universe = get_dynamic_universe()
 
-    for i, ticker in enumerate(TICKER_UNIVERSE):
+    for i, ticker in enumerate(universe):
         try:
             df = fetch_ohlcv(ticker, period="1y", interval="1d")
             if df is None or len(df) < 50:
@@ -550,7 +610,8 @@ def scan_for_entries(existing_positions: dict) -> list[tuple[str, float]]:
     """Return list of (ticker, price) that pass all entry signals."""
     # Prioritize pre-market watchlist tickers so they get checked first at open
     watchlist = load_premarket_watchlist()
-    universe = watchlist + [t for t in TICKER_UNIVERSE if t not in watchlist]
+    dynamic = get_dynamic_universe()
+    universe = watchlist + [t for t in dynamic if t not in watchlist]
     logger.info("Scanning %d tickers (watchlist: %d prioritized)...", len(universe), len(watchlist))
     candidates = fast_volume_filter(universe)
     logger.info("Volume filter: %d tickers pass volume spike test", len(candidates))
