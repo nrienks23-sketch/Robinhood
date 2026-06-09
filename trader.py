@@ -34,6 +34,7 @@ POSITIONS_FILE = Path(__file__).parent / "positions.json"
 LOG_FILE = Path(__file__).parent / "trader.log"
 POSITION_SIZE_USD = 50.0
 SCAN_INTERVAL_SECONDS = 30
+PREMARKET_START = dtime(8, 0, 0)   # start pre-market scan at 8:00 AM ET
 MARKET_OPEN = dtime(9, 30, 0)
 MARKET_CLOSE = dtime(16, 0, 0)
 EASTERN = pytz.timezone("America/New_York")
@@ -161,6 +162,13 @@ def is_market_open() -> bool:
         return False
     current_time = now.time()
     return MARKET_OPEN <= current_time < MARKET_CLOSE
+
+
+def is_premarket() -> bool:
+    now = get_eastern_now()
+    if now.weekday() >= 5:
+        return False
+    return PREMARKET_START <= now.time() < MARKET_OPEN
 
 
 def is_market_closing_soon() -> bool:
@@ -431,10 +439,113 @@ def fast_volume_filter(tickers: list[str]) -> list[str]:
     return survivors
 
 
+def premarket_scan() -> None:
+    """
+    Run during 8:00–9:30 AM ET. Pulls pre-market price + technicals for the
+    full universe and saves a ranked watchlist to premarket_watchlist.json.
+    At market open the main loop reads this file and fires entries immediately.
+    """
+    logger.info("PRE-MARKET SCAN starting...")
+    watchlist = []
+
+    for i, ticker in enumerate(TICKER_UNIVERSE):
+        try:
+            df = fetch_ohlcv(ticker, period="1y", interval="1d")
+            if df is None or len(df) < 50:
+                continue
+
+            close = df["close"]
+            volume = df["volume"]
+
+            # Pre-market price via 1m data (last available pre-market bar)
+            pm_df = yf.download(ticker, period="1d", interval="1m", progress=False,
+                                auto_adjust=True, prepost=True)
+            if pm_df is not None and not pm_df.empty:
+                if isinstance(pm_df.columns, pd.MultiIndex):
+                    pm_df.columns = pm_df.columns.get_level_values(0)
+                pm_df.columns = [c.lower() for c in pm_df.columns]
+                premarket_price = float(pm_df["close"].iloc[-1])
+                premarket_vol = float(pm_df["volume"].sum())
+            else:
+                premarket_price = float(close.iloc[-1])
+                premarket_vol = 0
+
+            prev_close = float(close.iloc[-1])
+            premarket_chg_pct = (premarket_price - prev_close) / prev_close * 100
+
+            sma50 = float(close.rolling(50).mean().iloc[-1])
+            sma200 = float(close.rolling(200).mean().iloc[-1]) if len(df) >= 200 else None
+            rsi = float(compute_rsi(close).iloc[-1])
+            macd_line, signal_line = compute_macd(close)
+            macd_ok = float(macd_line.iloc[-1]) > float(signal_line.iloc[-1])
+
+            avg_vol_20 = float(volume.iloc[-21:-1].mean())
+
+            above_sma50 = premarket_price > sma50
+            golden_cross = sma200 is not None and sma50 > sma200
+            rsi_ok = 50 <= rsi <= 75
+            vol_building = premarket_vol > avg_vol_20 * 0.1  # 10% of avg by pre-market is strong
+
+            score = sum([above_sma50, golden_cross, rsi_ok, macd_ok, vol_building])
+            # Must be moving up pre-market to make the list
+            if premarket_chg_pct > 0.5 and score >= 3:
+                watchlist.append({
+                    "ticker": ticker,
+                    "premarket_price": round(premarket_price, 2),
+                    "premarket_chg_pct": round(premarket_chg_pct, 2),
+                    "premarket_vol": int(premarket_vol),
+                    "rsi": round(rsi, 1),
+                    "sma50": round(sma50, 2),
+                    "sma200": round(sma200, 2) if sma200 else None,
+                    "macd_ok": macd_ok,
+                    "score": score,
+                })
+                logger.info(
+                    "PRE-MARKET WATCHLIST: %s +%.1f%% @ $%.2f | score %d/5 | RSI %.1f",
+                    ticker, premarket_chg_pct, premarket_price, score, rsi,
+                )
+        except Exception as exc:
+            logger.warning("Pre-market scan error on %s: %s", ticker, exc)
+
+        if i % 10 == 0:
+            time.sleep(0.5)
+
+    watchlist.sort(key=lambda x: (x["score"], x["premarket_chg_pct"]), reverse=True)
+
+    watchlist_file = Path(__file__).parent / "premarket_watchlist.json"
+    with open(watchlist_file, "w") as f:
+        json.dump(watchlist, f, indent=2)
+
+    logger.info("PRE-MARKET SCAN complete. %d tickers on watchlist.", len(watchlist))
+    print("\n" + "=" * 60)
+    print(f"  PRE-MARKET WATCHLIST ({len(watchlist)} stocks)")
+    print("=" * 60)
+    for s in watchlist[:10]:
+        print(f"  {s['ticker']:<7} +{s['premarket_chg_pct']:.1f}%  "
+              f"@ ${s['premarket_price']:.2f}  RSI={s['rsi']:.0f}  score={s['score']}/5")
+    print("=" * 60 + "\n")
+
+
+def load_premarket_watchlist() -> list[str]:
+    """Load tickers from the pre-market watchlist file, highest score first."""
+    watchlist_file = Path(__file__).parent / "premarket_watchlist.json"
+    if not watchlist_file.exists():
+        return []
+    try:
+        with open(watchlist_file, "r") as f:
+            data = json.load(f)
+        return [item["ticker"] for item in data]
+    except Exception:
+        return []
+
+
 def scan_for_entries(existing_positions: dict) -> list[tuple[str, float]]:
     """Return list of (ticker, price) that pass all entry signals."""
-    logger.info("Scanning %d tickers for entry signals...", len(TICKER_UNIVERSE))
-    candidates = fast_volume_filter(TICKER_UNIVERSE)
+    # Prioritize pre-market watchlist tickers so they get checked first at open
+    watchlist = load_premarket_watchlist()
+    universe = watchlist + [t for t in TICKER_UNIVERSE if t not in watchlist]
+    logger.info("Scanning %d tickers (watchlist: %d prioritized)...", len(universe), len(watchlist))
+    candidates = fast_volume_filter(universe)
     logger.info("Volume filter: %d tickers pass volume spike test", len(candidates))
 
     entries = []
@@ -649,6 +760,8 @@ def main() -> None:
     logger.info("Loaded %d existing positions from file.", len(positions))
 
     closed_today = False
+    premarket_scanned = False
+    last_premarket_scan = None
 
     while True:
         try:
@@ -663,9 +776,26 @@ def main() -> None:
                 time.sleep(SCAN_INTERVAL_SECONDS)
                 continue
 
-            # Reset close flag each morning
-            if now_et.time() < MARKET_OPEN:
+            # Reset flags each morning before pre-market
+            if now_et.time() < PREMARKET_START:
                 closed_today = False
+                premarket_scanned = False
+                last_premarket_scan = None
+                logger.info("Waiting for pre-market window (8:00 AM ET). Sleeping 60s.")
+                time.sleep(60)
+                continue
+
+            # Pre-market window: 8:00–9:30 AM ET — scan every 5 minutes
+            if is_premarket():
+                now_minute = now_et.hour * 60 + now_et.minute
+                if last_premarket_scan is None or (now_minute - last_premarket_scan) >= 5:
+                    premarket_scan()
+                    last_premarket_scan = now_minute
+                else:
+                    logger.info("Pre-market: next scan in %dm. Sleeping 30s.",
+                                5 - (now_minute - last_premarket_scan))
+                time.sleep(30)
+                continue
 
             if not is_market_open():
                 logger.info("Market closed. Sleeping %ds.", SCAN_INTERVAL_SECONDS)
