@@ -1,0 +1,410 @@
+2026-06-09 14:02:07,400 [INFO] PRE-MARKET SCAN starting...
+2026-06-09 14:02:12,429 [ERROR] HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: NKLA"}}}
+2026-06-09 14:02:12,748 [ERROR] $NKLA: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:12,757 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:12,758 [ERROR] ['NKLA']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:13,616 [ERROR] HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: GOEV"}}}
+2026-06-09 14:02:13,979 [ERROR] $GOEV: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:13,986 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:13,986 [ERROR] ['GOEV']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:14,845 [ERROR] $WISH: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:14,847 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:14,847 [ERROR] ['WISH']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:16,465 [ERROR] $APHA: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:16,466 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:16,466 [ERROR] ['APHA']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:17,054 [ERROR] $HEXO: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:17,059 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:17,059 [ERROR] ['HEXO']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:21,600 [ERROR] $EXPR: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:21,606 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:21,606 [ERROR] ['EXPR']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:22,527 [ERROR] $NAKD: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:22,528 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:22,528 [ERROR] ['NAKD']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:24,320 [ERROR] $RIDE: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:24,326 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:24,326 [ERROR] ['RIDE']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:24,926 [ERROR] $XL: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:24,929 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:24,930 [ERROR] ['XL']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:25,493 [ERROR] $FSR: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:25,502 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:25,502 [ERROR] ['FSR']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:26,603 [ERROR] $ARVL: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:26,613 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:26,614 [ERROR] ['ARVL']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:27,363 [ERROR] $SOLO: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:27,365 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:27,365 [ERROR] ['SOLO']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:28,225 [ERROR] $AYRO: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:28,232 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:28,232 [ERROR] ['AYRO']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:28,794 [ERROR] $PTRA: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:28,796 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:28,796 [ERROR] ['PTRA']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:30,153 [ERROR] $SAVA: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:30,159 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:30,159 [ERROR] ['SAVA']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:31,009 [ERROR] $SRNE: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:02:31,015 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:31,015 [ERROR] ['SRNE']: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:02:31,889 [ERROR] $VERB: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:31,898 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:31,898 [ERROR] ['VERB']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:32,407 [ERROR] $MRIN: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:32,409 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:32,410 [ERROR] ['MRIN']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:33,084 [ERROR] $OBSV: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:33,087 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:33,088 [ERROR] ['OBSV']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:33,666 [ERROR] $ZYNE: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:33,673 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:33,673 [ERROR] ['ZYNE']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:35,586 [ERROR] $AGTC: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:35,595 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:35,596 [ERROR] ['AGTC']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:37,444 [ERROR] $EYEG: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:02:37,445 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:37,445 [ERROR] ['EYEG']: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:02:38,703 [ERROR] $SGEN: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:38,711 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:38,711 [ERROR] ['SGEN']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:40,955 [ERROR] $VERV: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:40,961 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:40,962 [ERROR] ['VERV']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:46,900 [ERROR] $CFLT: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:46,905 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:46,905 [ERROR] ['CFLT']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:48,848 [ERROR] $SMAR: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:48,854 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:48,854 [ERROR] ['SMAR']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:50,544 [ERROR] $OLO: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:50,553 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:50,553 [ERROR] ['OLO']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:58,581 [ERROR] $KYNDRYL: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:58,582 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:58,582 [ERROR] ['KYNDRYL']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:59,177 [ERROR] $SUNW: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:59,178 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:59,178 [ERROR] ['SUNW']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:02:59,729 [ERROR] $MAXN: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:02:59,734 [ERROR] 
+1 Failed download:
+2026-06-09 14:02:59,734 [ERROR] ['MAXN']: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:03:00,842 [ERROR] $NOVA: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:00,847 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:00,847 [ERROR] ['NOVA']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:05,618 [ERROR] $AZRE: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:05,621 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:05,622 [ERROR] ['AZRE']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:06,151 [ERROR] $REGI: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:06,153 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:06,153 [ERROR] ['REGI']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:07,902 [ERROR] $NOVN: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:07,911 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:07,911 [ERROR] ['NOVN']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:10,679 [ERROR] $SILV: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:10,683 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:10,683 [ERROR] ['SILV']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:13,056 [ERROR] $MFAC: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:13,059 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:13,059 [ERROR] ['MFAC']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:14,497 [ERROR] $LAZY: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:14,500 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:14,500 [ERROR] ['LAZY']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:15,138 [ERROR] $BIGC: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:15,141 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:15,141 [ERROR] ['BIGC']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:15,929 [ERROR] $POSH: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:15,934 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:15,935 [ERROR] ['POSH']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:17,491 [ERROR] $OTRK: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:03:17,496 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:17,496 [ERROR] ['OTRK']: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:03:18,449 [ERROR] $XELA: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:03:18,455 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:18,455 [ERROR] ['XELA']: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:03:19,010 [ERROR] $TLGA: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:19,012 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:19,012 [ERROR] ['TLGA']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:20,100 [ERROR] $FFIE: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:20,104 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:20,104 [ERROR] ['FFIE']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:20,648 [ERROR] $MULN: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:20,656 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:20,656 [ERROR] ['MULN']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:23,914 [ERROR] $MILE: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:23,919 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:23,919 [ERROR] ['MILE']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:25,644 [ERROR] $GHIV: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:25,647 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:25,647 [ERROR] ['GHIV']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:28,753 [ERROR] $NICK: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:28,754 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:28,754 [ERROR] ['NICK']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:29,168 [ERROR] $TTOO: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:03:29,172 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:29,172 [ERROR] ['TTOO']: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:03:29,720 [ERROR] $NUO: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:29,727 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:29,727 [ERROR] ['NUO']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:30,858 [ERROR] $OATLY: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:30,867 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:30,867 [ERROR] ['OATLY']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:31,391 [ERROR] $PNTM: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:31,398 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:31,398 [ERROR] ['PNTM']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:33,926 [ERROR] $ZEV: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:33,936 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:33,936 [ERROR] ['ZEV']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:34,446 [ERROR] $IDEX: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:34,448 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:34,448 [ERROR] ['IDEX']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:37,080 [ERROR] $BITF: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:37,087 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:37,088 [ERROR] ['BITF']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:38,201 [ERROR] $BTCY: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:03:38,208 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:38,208 [ERROR] ['BTCY']: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:03:39,756 [ERROR] $DMGI: possibly delisted; no price data found  (period=1y)
+2026-06-09 14:03:39,758 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:39,758 [ERROR] ['DMGI']: possibly delisted; no price data found  (period=1y)
+2026-06-09 14:03:40,537 [ERROR] $BTCM: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:40,540 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:40,540 [ERROR] ['BTCM']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:40,833 [ERROR] $NCTY: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:03:40,841 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:40,841 [ERROR] ['NCTY']: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:03:42,228 [ERROR] $BRPHF: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:42,236 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:42,236 [ERROR] ['BRPHF']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:42,468 [ERROR] $FRMO: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:03:42,475 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:42,475 [ERROR] ['FRMO']: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:03:42,482 [INFO] PRE-MARKET SCAN complete. 0 tickers on watchlist.
+2026-06-09 14:03:42,482 [INFO] Scanning 198 tickers (watchlist: 0 prioritized)...
+2026-06-09 14:03:42,986 [ERROR] $NKLA: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:43,276 [ERROR] $APHA: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:43,561 [ERROR] $HEXO: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:43,595 [ERROR] $GOEV: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:44,207 [ERROR] $WISH: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:44,217 [ERROR] 
+5 Failed downloads:
+2026-06-09 14:03:44,217 [ERROR] ['NKLA', 'APHA', 'HEXO', 'GOEV', 'WISH']: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:45,199 [ERROR] $SOLO: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:45,379 [ERROR] $ARVL: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:45,381 [ERROR] $NAKD: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:45,850 [ERROR] $AYRO: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:45,853 [ERROR] $EXPR: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:45,859 [ERROR] $RIDE: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:46,266 [ERROR] $XL: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:46,494 [ERROR] $FSR: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:46,569 [ERROR] $PTRA: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:46,573 [ERROR] 
+9 Failed downloads:
+2026-06-09 14:03:46,573 [ERROR] ['SOLO', 'ARVL', 'NAKD', 'AYRO', 'EXPR', 'RIDE', 'XL', 'FSR', 'PTRA']: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:47,618 [ERROR] $ZYNE: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:47,637 [ERROR] $VERB: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:47,739 [ERROR] $MRIN: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:48,195 [ERROR] $SAVA: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:48,252 [ERROR] $OBSV: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:48,547 [ERROR] $AGTC: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:48,728 [ERROR] $SGEN: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:48,737 [ERROR] 
+7 Failed downloads:
+2026-06-09 14:03:48,737 [ERROR] ['ZYNE', 'VERB', 'MRIN', 'SAVA', 'OBSV', 'AGTC', 'SGEN']: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:50,306 [ERROR] $CFLT: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:50,818 [ERROR] $VERV: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:51,177 [ERROR] $SMAR: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:51,185 [ERROR] 
+3 Failed downloads:
+2026-06-09 14:03:51,185 [ERROR] ['CFLT', 'VERV', 'SMAR']: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:52,867 [ERROR] $OLO: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:52,870 [ERROR] 
+1 Failed download:
+2026-06-09 14:03:52,870 [ERROR] ['OLO']: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:53,945 [ERROR] $SUNW: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:54,244 [ERROR] $NOVA: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:54,510 [ERROR] $AZRE: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:54,779 [ERROR] $REGI: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:54,979 [ERROR] $KYNDRYL: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:54,986 [ERROR] 
+5 Failed downloads:
+2026-06-09 14:03:54,986 [ERROR] ['SUNW', 'NOVA', 'AZRE', 'REGI', 'KYNDRYL']: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:56,062 [ERROR] $BIGC: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:56,272 [ERROR] $POSH: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:56,347 [ERROR] $LAZY: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:56,541 [ERROR] $SILV: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:56,748 [ERROR] $NOVN: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:57,008 [ERROR] $MFAC: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:57,016 [ERROR] 
+6 Failed downloads:
+2026-06-09 14:03:57,016 [ERROR] ['BIGC', 'POSH', 'LAZY', 'SILV', 'NOVN', 'MFAC']: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:58,258 [ERROR] $GHIV: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:58,318 [ERROR] $MILE: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:58,714 [ERROR] $FFIE: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:58,977 [ERROR] $TLGA: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:59,014 [ERROR] $MULN: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:59,016 [ERROR] 
+5 Failed downloads:
+2026-06-09 14:03:59,016 [ERROR] ['GHIV', 'MILE', 'FFIE', 'TLGA', 'MULN']: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:59,845 [ERROR] $NICK: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:03:59,847 [ERROR] $PNTM: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:04:00,118 [ERROR] $OATLY: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:04:00,130 [ERROR] $IDEX: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:04:00,364 [ERROR] $NUO: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:04:00,638 [ERROR] $ZEV: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:04:00,645 [ERROR] 
+6 Failed downloads:
+2026-06-09 14:04:00,645 [ERROR] ['NICK', 'PNTM', 'OATLY', 'IDEX', 'NUO', 'ZEV']: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:04:01,461 [ERROR] $DMGI: possibly delisted; no price data found  (period=25d)
+2026-06-09 14:04:01,700 [ERROR] $BITF: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:04:02,013 [ERROR] $BTCM: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:04:02,030 [ERROR] $BRPHF: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:04:02,107 [ERROR] 
+4 Failed downloads:
+2026-06-09 14:04:02,107 [ERROR] ['DMGI']: possibly delisted; no price data found  (period=25d)
+2026-06-09 14:04:02,107 [ERROR] ['BITF', 'BTCM', 'BRPHF']: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:04:02,630 [INFO] Volume filter: 0 tickers pass volume spike test
+2026-06-09 14:05:02,005 [INFO] PRE-MARKET SCAN starting...
+2026-06-09 14:05:08,578 [ERROR] $EXPR: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:05:08,586 [ERROR] 
+1 Failed download:
+2026-06-09 14:05:08,586 [ERROR] ['EXPR']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:05:11,114 [ERROR] $RIDE: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:05:11,118 [ERROR] 
+1 Failed download:
+2026-06-09 14:05:11,119 [ERROR] ['RIDE']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:05:11,637 [ERROR] $XL: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:05:11,641 [ERROR] 
+1 Failed download:
+2026-06-09 14:05:11,641 [ERROR] ['XL']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:05:12,282 [ERROR] $FSR: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:05:12,284 [ERROR] 
+1 Failed download:
+2026-06-09 14:05:12,284 [ERROR] ['FSR']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:05:13,462 [ERROR] $ARVL: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:05:13,463 [ERROR] 
+1 Failed download:
+2026-06-09 14:05:13,464 [ERROR] ['ARVL']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:05:14,804 [ERROR] $SOLO: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:05:14,806 [ERROR] 
+1 Failed download:
+2026-06-09 14:05:14,806 [ERROR] ['SOLO']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:05:15,529 [ERROR] $AYRO: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:05:15,533 [ERROR] 
+1 Failed download:
+2026-06-09 14:05:15,533 [ERROR] ['AYRO']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:05:16,111 [ERROR] $PTRA: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:05:16,115 [ERROR] 
+1 Failed download:
+2026-06-09 14:05:16,115 [ERROR] ['PTRA']: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:05:19,742 [ERROR] $EYEG: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:05:19,745 [ERROR] 
+1 Failed download:
+2026-06-09 14:05:19,745 [ERROR] ['EYEG']: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:05:34,464 [ERROR] $MAXN: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:05:34,465 [ERROR] 
+1 Failed download:
+2026-06-09 14:05:34,465 [ERROR] ['MAXN']: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:05:43,861 [ERROR] $OTRK: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:05:43,866 [ERROR] 
+1 Failed download:
+2026-06-09 14:05:43,866 [ERROR] ['OTRK']: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:05:44,106 [ERROR] $XELA: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:05:44,109 [ERROR] 
+1 Failed download:
+2026-06-09 14:05:44,109 [ERROR] ['XELA']: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:05:49,557 [ERROR] $TTOO: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:05:49,563 [ERROR] 
+1 Failed download:
+2026-06-09 14:05:49,563 [ERROR] ['TTOO']: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:05:55,763 [ERROR] $BTCY: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:05:55,770 [ERROR] 
+1 Failed download:
+2026-06-09 14:05:55,771 [ERROR] ['BTCY']: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:05:57,381 [ERROR] $NCTY: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:05:57,385 [ERROR] 
+1 Failed download:
+2026-06-09 14:05:57,385 [ERROR] ['NCTY']: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:05:58,787 [ERROR] $FRMO: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:05:58,789 [ERROR] 
+1 Failed download:
+2026-06-09 14:05:58,789 [ERROR] ['FRMO']: possibly delisted; no price data found  (period=1d)
+2026-06-09 14:05:58,798 [INFO] PRE-MARKET SCAN complete. 0 tickers on watchlist.
+2026-06-09 14:05:58,799 [INFO] Scanning 153 tickers (watchlist: 0 prioritized)...
+2026-06-09 14:05:59,325 [ERROR] $EXPR: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:05:59,619 [ERROR] 
+1 Failed download:
+2026-06-09 14:05:59,619 [ERROR] ['EXPR']: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:06:00,575 [ERROR] $AYRO: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:06:00,772 [ERROR] $ARVL: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:06:00,785 [ERROR] $XL: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:06:00,902 [ERROR] $RIDE: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:06:01,116 [ERROR] $FSR: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:06:01,149 [ERROR] $PTRA: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:06:01,269 [ERROR] $SOLO: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:06:01,298 [ERROR] 
+7 Failed downloads:
+2026-06-09 14:06:01,298 [ERROR] ['AYRO', 'ARVL', 'XL', 'RIDE', 'FSR', 'PTRA', 'SOLO']: possibly delisted; no price data found  (period=25d) (Yahoo error = "No data found, symbol may be delisted")
+2026-06-09 14:06:08,904 [INFO] Volume filter: 0 tickers pass volume spike test
