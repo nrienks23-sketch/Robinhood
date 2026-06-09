@@ -66,20 +66,27 @@ RSI_LOW = 50
 RSI_HIGH = 70
 
 # Tiered exit levels: (profit_pct, fraction_of_original_shares_to_sell)
+# 10% at +2%, 20% at +3%, 10% at +4%, 20% at +5% = 60% sold via tiers
+# Remaining 40% is held for the trailing stop to capture further upside
 TIERS = [
-    (0.03, 0.10),
-    (0.045, 0.20),
-    (0.06, 0.50),
-    (0.10, 0.20),
+    (0.02, 0.10),
+    (0.03, 0.20),
+    (0.04, 0.10),
+    (0.05, 0.20),
 ]
 
-# Trailing stop parameters
+# Trailing stop: activates once HWM hits +7.5%, trails 2.5% below HWM
+# Sells ALL remaining shares when price falls to the floor
 TRAILING_STOP_ACTIVATION_PCT = 0.075   # activate once HWM hits +7.5%
-TRAILING_STOP_DROP_ALLOWED = 0.025     # allow 2.5% drop from HWM floor
-TRAILING_STOP_FLOOR_PCT = 0.05         # hard floor once activated: +5% from entry
+TRAILING_STOP_DROP_ALLOWED = 0.025     # trail 2.5% below HWM
+TRAILING_STOP_FLOOR_PCT = 0.05         # absolute floor: never let it drop below +5% from entry
 
-# Hard stop loss
+# Hard stop loss (before any tiers trigger): sell everything at -3%
 HARD_STOP_LOSS_PCT = -0.03
+
+# Breakeven stop: once the first tier triggers, tighten stop to -1%
+# so a winner can never fully reverse into a loss
+BREAKEVEN_STOP_PCT = -0.01
 
 # ---------------------------------------------------------------------------
 # Ticker universe (~200 small/mid-cap names)
@@ -937,11 +944,20 @@ def update_position_exit(ticker: str, pos: dict, current_price: float, positions
             save_positions(positions)
             return
 
-    # Hard stop loss (only if no tiers have been triggered)
-    if not tiers_triggered and pct_gain <= HARD_STOP_LOSS_PCT:
+    # Stop loss logic:
+    # - Before any tiers trigger: hard stop at -3%
+    # - After first tier triggers: tighten to -1% (breakeven stop)
+    # This ensures a winner can never fully reverse into a meaningful loss
+    if not tiers_triggered:
+        stop_pct = HARD_STOP_LOSS_PCT
+    else:
+        stop_pct = BREAKEVEN_STOP_PCT
+
+    if pct_gain <= stop_pct:
+        stop_label = "HARD STOP LOSS" if not tiers_triggered else "BREAKEVEN STOP"
         logger.info(
-            "STOP LOSS for %s: price $%.2f (%.2f%%)",
-            ticker, current_price, pct_gain * 100,
+            "%s for %s: price $%.2f (%.2f%% <= stop %.2f%%)",
+            stop_label, ticker, current_price, pct_gain * 100, stop_pct * 100,
         )
         place_sell(ticker, shares)
         del positions[ticker]
