@@ -42,7 +42,10 @@ EASTERN = pytz.timezone("America/New_York")
 # Volume / market-cap filters
 MIN_MARKET_CAP = 150_000_000   # $150M
 MAX_MARKET_CAP = 20_000_000_000  # $20B
-VOLUME_MULTIPLIER = 2.0         # must be >= 2x 20-day avg
+VOLUME_MULTIPLIER = 2.0         # projected full-day volume must be >= 2x 20-day avg
+
+# Position limits
+MAX_POSITIONS = 3               # never hold more than 3 positions at once
 
 # RSI thresholds
 RSI_LOW = 50
@@ -357,11 +360,17 @@ def check_entry_signals(ticker: str) -> tuple[bool, float | None, str]:
         pass  # skip market cap filter if unavailable
 
     # --- Volume spike ---
+    # Project today's partial volume to a full trading day (390 minutes)
+    # so the filter works correctly at market open, not just end of day.
+    now_et = datetime.now(pytz.timezone("America/New_York"))
+    market_open_dt = now_et.replace(hour=9, minute=30, second=0, microsecond=0)
+    minutes_elapsed = max(1, (now_et - market_open_dt).seconds // 60)
     avg_vol_20 = float(volume.iloc[-21:-1].mean())
     current_vol = float(volume.iloc[-1])
-    if avg_vol_20 == 0 or current_vol < VOLUME_MULTIPLIER * avg_vol_20:
+    projected_vol = current_vol * (390 / minutes_elapsed)
+    if avg_vol_20 == 0 or projected_vol < VOLUME_MULTIPLIER * avg_vol_20:
         return False, current_price, (
-            f"volume {current_vol:.0f} < {VOLUME_MULTIPLIER}x avg {avg_vol_20:.0f}"
+            f"projected volume {projected_vol:.0f} < {VOLUME_MULTIPLIER}x avg {avg_vol_20:.0f}"
         )
 
     # --- SMA checks ---
@@ -807,6 +816,9 @@ def main() -> None:
             new_entries = scan_for_entries(positions)
 
             for ticker, price in new_entries:
+                if len(positions) >= MAX_POSITIONS:
+                    logger.info("Max positions (%d) reached — skipping new entries.", MAX_POSITIONS)
+                    break
                 if ticker not in positions:
                     enter_position(ticker, price, positions)
 
