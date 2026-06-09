@@ -566,77 +566,78 @@ def check_news_catalyst(ticker: str) -> tuple[bool, str]:
     return True, f"{flag} (score={positive_score}) — {summary}"
 
 
-def check_entry_signals(ticker: str) -> tuple[bool, float | None, str]:
+def check_entry_signals(ticker: str) -> tuple[int, float | None, str]:
     """
-    Returns (should_enter, current_price, reason).
-    reason is a human-readable string explaining the outcome.
+    Scores all 6 signals and returns (score, current_price, detail_string).
+    Score 6 = all signals pass (strongest)
+    Score 5 = one signal missing
+    Score 4 = two signals missing
+    Score < 4 = skip entirely
+    Never hard-blocks on a single signal — everything is scored.
     """
-    # --- News / catalyst check (flags only — never blocks entry) ---
     _, news_summary = check_news_catalyst(ticker)
     logger.info("News flag for %s: %s", ticker, news_summary)
 
     df = fetch_ohlcv(ticker, period="1y", interval="1d")
-    if df is None or len(df) < 200:
-        return False, None, "insufficient data"
+    if df is None or len(df) < 50:
+        return 0, None, "insufficient data"
 
     close = df["close"]
     volume = df["volume"]
     current_price = float(close.iloc[-1])
 
-    # --- Market cap check (approximate using shares_outstanding from yfinance) ---
+    # Market cap gate — hard filter, not scored (just skip out-of-range stocks)
     try:
         info = yf.Ticker(ticker).fast_info
-        market_cap = getattr(info, "market_cap", None)
-        if market_cap is None:
-            market_cap = getattr(info, "marketCap", None)
-        if market_cap is not None:
-            if not (MIN_MARKET_CAP <= market_cap <= MAX_MARKET_CAP):
-                return False, current_price, f"market cap {market_cap:.0f} out of range"
+        market_cap = getattr(info, "market_cap", None) or getattr(info, "marketCap", None)
+        if market_cap is not None and not (MIN_MARKET_CAP <= market_cap <= MAX_MARKET_CAP):
+            return 0, current_price, f"market cap out of range"
     except Exception:
-        pass  # skip market cap filter if unavailable
+        pass
 
-    # --- Volume spike ---
-    # Project today's partial volume to a full trading day (390 minutes)
-    # so the filter works correctly at market open, not just end of day.
+    signals = {}
+
+    # 1. Volume spike
     now_et = datetime.now(pytz.timezone("America/New_York"))
     market_open_dt = now_et.replace(hour=9, minute=30, second=0, microsecond=0)
     minutes_elapsed = max(1, (now_et - market_open_dt).seconds // 60)
     avg_vol_20 = float(volume.iloc[-21:-1].mean())
     current_vol = float(volume.iloc[-1])
     projected_vol = current_vol * (390 / minutes_elapsed)
-    if avg_vol_20 == 0 or projected_vol < VOLUME_MULTIPLIER * avg_vol_20:
-        return False, current_price, (
-            f"projected volume {projected_vol:.0f} < {VOLUME_MULTIPLIER}x avg {avg_vol_20:.0f}"
-        )
+    signals["volume"] = (avg_vol_20 > 0 and projected_vol >= VOLUME_MULTIPLIER * avg_vol_20,
+                         f"vol {projected_vol/avg_vol_20:.1f}x" if avg_vol_20 > 0 else "vol N/A")
 
-    # --- SMA checks ---
+    # 2. Price above SMA50
     sma50 = compute_sma(close, 50)
-    sma200 = compute_sma(close, 200)
-    if current_price <= float(sma50.iloc[-1]):
-        return False, current_price, "price below SMA50"
-    if float(sma50.iloc[-1]) <= float(sma200.iloc[-1]):
-        return False, current_price, "SMA50 below SMA200 (no golden cross)"
+    sma50_val = float(sma50.iloc[-1])
+    signals["sma50"] = (current_price > sma50_val, f"price {'>' if current_price > sma50_val else '<'} SMA50")
 
-    # --- RSI ---
-    rsi = compute_rsi(close)
-    rsi_val = float(rsi.iloc[-1])
-    if not (RSI_LOW <= rsi_val <= RSI_HIGH):
-        return False, current_price, f"RSI {rsi_val:.1f} outside [{RSI_LOW}, {RSI_HIGH}]"
+    # 3. Golden cross (SMA50 > SMA200)
+    if len(df) >= 200:
+        sma200_val = float(compute_sma(close, 200).iloc[-1])
+        signals["golden_cross"] = (sma50_val > sma200_val,
+                                   "golden cross ✅" if sma50_val > sma200_val else "no golden cross")
+    else:
+        signals["golden_cross"] = (False, "SMA200 N/A")
 
-    # --- MACD ---
+    # 4. RSI
+    rsi_val = float(compute_rsi(close).iloc[-1])
+    signals["rsi"] = (RSI_LOW <= rsi_val <= RSI_HIGH, f"RSI {rsi_val:.1f}")
+
+    # 5. MACD
     macd_line, signal_line = compute_macd(close)
-    if float(macd_line.iloc[-1]) <= float(signal_line.iloc[-1]):
-        return False, current_price, "MACD below signal"
+    macd_bull = float(macd_line.iloc[-1]) > float(signal_line.iloc[-1])
+    signals["macd"] = (macd_bull, "MACD ✅" if macd_bull else "MACD ❌")
 
-    # --- Candlestick pattern (5m → 15m → daily) ---
+    # 6. Candlestick pattern
     pattern_found, pattern_desc = has_bullish_pattern_intraday(ticker)
-    if not pattern_found:
-        return False, current_price, pattern_desc
+    signals["candle"] = (pattern_found, pattern_desc)
 
-    return True, current_price, (
-        f"all signals passed | price={current_price:.2f} RSI={rsi_val:.1f} "
-        f"vol={current_vol:.0f} ({current_vol/avg_vol_20:.1f}x avg) | {pattern_desc}"
-    )
+    score = sum(1 for v, _ in signals.values() if v)
+    detail = " | ".join(f"{'✅' if v else '❌'} {desc}" for _, (v, desc) in signals.items())
+    full_detail = f"score={score}/6 | ${current_price:.2f} | {detail}"
+
+    return score, current_price, full_detail
 
 # ---------------------------------------------------------------------------
 # Scanning
@@ -837,9 +838,16 @@ def load_premarket_watchlist() -> list[str]:
         return []
 
 
-def scan_for_entries(existing_positions: dict) -> list[tuple[str, float]]:
-    """Return list of (ticker, price) that pass all entry signals."""
-    # Prioritize pre-market watchlist tickers so they get checked first at open
+def scan_for_entries(existing_positions: dict) -> dict:
+    """
+    Scan universe and return results bucketed by signal score.
+    Returns dict: {
+        6: [(ticker, price, detail), ...],   # 6/6 — strongest
+        5: [(ticker, price, detail), ...],   # 5/6
+        4: [(ticker, price, detail), ...],   # 4/6
+    }
+    Bot auto-enters 6/6 and 5/6. Shows 4/6 as watchlist only.
+    """
     watchlist = load_premarket_watchlist()
     dynamic = get_dynamic_universe()
     universe = watchlist + [t for t in dynamic if t not in watchlist]
@@ -847,22 +855,24 @@ def scan_for_entries(existing_positions: dict) -> list[tuple[str, float]]:
     candidates = fast_volume_filter(universe)
     logger.info("Volume filter: %d tickers pass volume spike test", len(candidates))
 
-    entries = []
+    results = {6: [], 5: [], 4: []}
+
     for ticker in candidates:
         if ticker in existing_positions:
-            continue  # already holding
+            continue
         try:
-            should_enter, price, reason = check_entry_signals(ticker)
-            if should_enter:
-                logger.info("SIGNAL: %s @ $%.2f — %s", ticker, price, reason)
-                entries.append((ticker, price))
+            score, price, detail = check_entry_signals(ticker)
+            if score >= 4 and price is not None:
+                results[min(score, 6)].append((ticker, price, detail))
+                logger.info("SCORE %d/6: %s @ $%.2f — %s", score, ticker, price, detail)
             else:
-                logger.debug("SKIP %s — %s", ticker, reason)
+                logger.debug("SKIP %s (score %d) — %s", ticker, score, detail)
         except Exception as exc:
             logger.warning("Error analysing %s: %s", ticker, exc)
-        time.sleep(0.3)  # rate limit
+        time.sleep(0.3)
 
-    return entries
+    # Sort each bucket by score desc within bucket (all same score, so just keep order)
+    return results
 
 # ---------------------------------------------------------------------------
 # Position management
@@ -1042,12 +1052,18 @@ def print_summary(positions: dict, scan_entries: list) -> None:
     else:
         print("  No open positions.")
 
-    if scan_entries:
-        print(f"\n  New signals this scan ({len(scan_entries)}):")
-        for ticker, price in scan_entries:
-            print(f"    {ticker:6s} @ ${price:.2f}")
+    total_signals = sum(len(v) for v in scan_entries.values()) if isinstance(scan_entries, dict) else 0
+    if total_signals:
+        for score in [6, 5, 4]:
+            bucket = scan_entries.get(score, [])
+            if not bucket:
+                continue
+            label = {6: "🔥 6/6 — AUTO ENTER", 5: "✅ 5/6 — AUTO ENTER", 4: "👀 4/6 — WATCH ONLY"}[score]
+            print(f"\n  {label} ({len(bucket)} stocks):")
+            for ticker, price, detail in bucket:
+                print(f"    {ticker:6s} @ ${price:.2f}  |  {detail}")
     else:
-        print("\n  No new entry signals this scan.")
+        print("\n  No signals found this scan.")
 
     print("=" * 60 + "\n")
 
@@ -1115,15 +1131,17 @@ def main() -> None:
             # Manage existing positions first
             manage_positions(positions)
 
-            # Scan for new entries
+            # Scan for new entries — returns {6: [...], 5: [...], 4: [...]}
             new_entries = scan_for_entries(positions)
 
-            for ticker, price in new_entries:
-                if len(positions) >= MAX_POSITIONS:
-                    logger.info("Max positions (%d) reached — skipping new entries.", MAX_POSITIONS)
-                    break
-                if ticker not in positions:
-                    enter_position(ticker, price, positions)
+            # Auto-enter 6/6 and 5/6 signals, show 4/6 as watch only
+            for score in [6, 5]:
+                for ticker, price, detail in new_entries.get(score, []):
+                    if len(positions) >= MAX_POSITIONS:
+                        logger.info("Max positions (%d) reached — skipping.", MAX_POSITIONS)
+                        break
+                    if ticker not in positions:
+                        enter_position(ticker, price, positions)
 
             print_summary(positions, new_entries)
 
