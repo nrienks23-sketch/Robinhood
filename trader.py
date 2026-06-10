@@ -849,8 +849,13 @@ def premarket_scan() -> None:
             golden_cross = sma200 is not None and sma50 > sma200
             rsi_ok = 50 <= rsi <= 75
             vol_building = premarket_vol > avg_vol_20 * 0.1  # 10% of avg by pre-market is strong
+            vol_spike = avg_vol_20 > 0 and premarket_vol >= 0.3 * avg_vol_20
+            quiet = vol_building and abs(premarket_chg_pct) < 3.0
 
-            score = sum([above_sma50, golden_cross, rsi_ok, macd_ok, vol_building])
+            score = sum([above_sma50, golden_cross, rsi_ok, macd_ok, vol_building, vol_spike])
+            # Skip stocks that already ran too much pre-market
+            if premarket_chg_pct > 8.0:
+                continue
             # Must be moving up pre-market to make the list
             if premarket_chg_pct > 0.5 and score >= 3:
                 watchlist.append({
@@ -862,11 +867,13 @@ def premarket_scan() -> None:
                     "sma50": round(sma50, 2),
                     "sma200": round(sma200, 2) if sma200 else None,
                     "macd_ok": macd_ok,
+                    "quiet": quiet,
                     "score": score,
                 })
+                quiet_tag = " 🔍 QUIET" if quiet else ""
                 logger.info(
-                    "PRE-MARKET WATCHLIST: %s +%.1f%% @ $%.2f | score %d/5 | RSI %.1f",
-                    ticker, premarket_chg_pct, premarket_price, score, rsi,
+                    "PRE-MARKET WATCHLIST: %s +%.1f%% @ $%.2f | score %d/6 | RSI %.1f%s",
+                    ticker, premarket_chg_pct, premarket_price, score, rsi, quiet_tag,
                 )
         except Exception as exc:
             logger.warning("Pre-market scan error on %s: %s", ticker, exc)
@@ -885,8 +892,9 @@ def premarket_scan() -> None:
     print(f"  PRE-MARKET WATCHLIST ({len(watchlist)} stocks)")
     print("=" * 60)
     for s in watchlist[:10]:
+        quiet_tag = " 🔍 QUIET" if s.get("quiet") else ""
         print(f"  {s['ticker']:<7} +{s['premarket_chg_pct']:.1f}%  "
-              f"@ ${s['premarket_price']:.2f}  RSI={s['rsi']:.0f}  score={s['score']}/5")
+              f"@ ${s['premarket_price']:.2f}  RSI={s['rsi']:.0f}  score={s['score']}/6{quiet_tag}")
     print("=" * 60 + "\n")
 
 
