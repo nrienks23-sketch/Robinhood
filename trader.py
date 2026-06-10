@@ -308,19 +308,27 @@ def place_sell_dollars(ticker: str, amount_usd: float) -> bool:
 # ---------------------------------------------------------------------------
 
 def fetch_ohlcv(ticker: str, period: str = "1y", interval: str = "1d") -> pd.DataFrame | None:
-    try:
-        df = yf.download(ticker, period=period, interval=interval, progress=False, auto_adjust=True)
-        if df is None or df.empty or len(df) < 50:
+    for attempt in range(3):
+        try:
+            df = yf.download(ticker, period=period, interval=interval, progress=False, auto_adjust=True)
+            if df is None or df.empty or len(df) < 50:
+                if attempt < 2:
+                    time.sleep(1.5)
+                    continue
+                return None
+            # Flatten multi-level columns if present
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+            df.columns = [c.lower() for c in df.columns]
+            df.dropna(inplace=True)
+            return df
+        except Exception as exc:
+            if attempt < 2:
+                time.sleep(1.5)
+                continue
+            logger.warning("yfinance fetch failed for %s: %s", ticker, exc)
             return None
-        # Flatten multi-level columns if present
-        if isinstance(df.columns, pd.MultiIndex):
-            df.columns = df.columns.get_level_values(0)
-        df.columns = [c.lower() for c in df.columns]
-        df.dropna(inplace=True)
-        return df
-    except Exception as exc:
-        logger.warning("yfinance fetch failed for %s: %s", ticker, exc)
-        return None
+    return None
 
 
 def compute_sma(series: pd.Series, window: int) -> pd.Series:
