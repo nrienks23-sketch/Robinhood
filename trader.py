@@ -3,6 +3,7 @@
 
 import os
 import re
+import sys
 import json
 import time
 import logging
@@ -36,6 +37,8 @@ except ImportError:
 
 import robin_stocks.robinhood as r
 
+import discord_notify
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -45,6 +48,8 @@ import robin_stocks.robinhood as r
 DRY_RUN = True
 
 POSITIONS_FILE = Path(__file__).parent / "positions.json"
+TRADES_FILE = Path(__file__).parent / "trades.json"
+EOD_POST_MARKER = Path(__file__).parent / "last_eod_post.txt"
 LOG_FILE = Path(__file__).parent / "trader.log"
 POSITION_SIZE_USD = 50.0
 SCAN_INTERVAL_SECONDS = 300  # 5 minutes
@@ -208,6 +213,52 @@ def save_positions(positions: dict) -> None:
         logger.error("Failed to save positions.json: %s", exc)
 
 # ---------------------------------------------------------------------------
+# Trade history (trades.json) — permanent record of every buy/sell, used for
+# the daily Discord P&L line and end-of-day summary
+# ---------------------------------------------------------------------------
+
+def load_trades() -> list:
+    if TRADES_FILE.exists():
+        try:
+            with open(TRADES_FILE, "r") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError) as exc:
+            logger.error("Failed to load trades.json: %s", exc)
+    return []
+
+
+def record_trade(action: str, ticker: str, dollars: float, price: float | None = None,
+                 reason: str = "", realized_pnl: float | None = None) -> None:
+    """Append one row to trades.json. Never raises — bookkeeping must not
+    interrupt trading."""
+    now = get_eastern_now()
+    row = {
+        "time": now.isoformat(),
+        "date": now.strftime("%Y-%m-%d"),
+        "action": action,
+        "ticker": ticker,
+        "dollars": round(dollars, 2),
+        "price": round(price, 4) if price is not None else None,
+        "reason": reason,
+        "realized_pnl": round(realized_pnl, 2) if realized_pnl is not None else None,
+        "dry_run": DRY_RUN,
+    }
+    try:
+        trades = load_trades()
+        trades.append(row)
+        with open(TRADES_FILE, "w") as f:
+            json.dump(trades, f, indent=2)
+    except OSError as exc:
+        logger.error("Failed to save trades.json: %s", exc)
+
+
+def todays_trades() -> list:
+    """Today's rows matching the current DRY_RUN mode."""
+    today = get_eastern_now().strftime("%Y-%m-%d")
+    return [t for t in load_trades()
+            if t.get("date") == today and t.get("dry_run", False) == DRY_RUN]
+
+# ---------------------------------------------------------------------------
 # Market hours helpers
 # ---------------------------------------------------------------------------
 
@@ -248,10 +299,15 @@ def is_afterhours() -> bool:
 # ---------------------------------------------------------------------------
 
 def rh_login() -> bool:
-    username = os.environ.get("ROBINHOOD_USERNAME", "nrienks23@gmail.com")
-    password = os.environ.get("ROBINHOOD_PASSWORD", "LanD1989$$")
+    local_cfg = discord_notify.load_local_config()
+    username = os.environ.get("ROBINHOOD_USERNAME") or local_cfg.get("robinhood_username", "")
+    password = os.environ.get("ROBINHOOD_PASSWORD") or local_cfg.get("robinhood_password", "")
     if not username or not password:
-        logger.error("ROBINHOOD_USERNAME and ROBINHOOD_PASSWORD must be set.")
+        logger.error(
+            "Robinhood credentials missing. Copy local_config.example.json to "
+            "local_config.json and fill in robinhood_username/robinhood_password "
+            "(or set ROBINHOOD_USERNAME/ROBINHOOD_PASSWORD env vars)."
+        )
         return False
     try:
         r.login(username, password)
@@ -1009,6 +1065,7 @@ def enter_position(ticker: str, price: float, positions: dict) -> None:
         "ENTERED %s: $%.2f @ $%.2f per share | %s",
         ticker, POSITION_SIZE_USD, price, news_summary,
     )
+    record_trade("BUY", ticker, POSITION_SIZE_USD, price=price, reason=news_summary)
     save_positions(positions)
 
 
@@ -1052,6 +1109,8 @@ def update_position_exit(ticker: str, pos: dict, current_price: float, positions
                 ticker, current_price, pct_gain * 100, floor_pct * 100, sell_usd,
             )
             place_sell_dollars(ticker, sell_usd)
+            record_trade("SELL", ticker, sell_usd, price=current_price,
+                         reason="trailing stop", realized_pnl=sell_usd - dollars_remaining)
             del positions[ticker]
             save_positions(positions)
             return
@@ -1068,6 +1127,8 @@ def update_position_exit(ticker: str, pos: dict, current_price: float, positions
             stop_label, ticker, current_price, pct_gain * 100, sell_usd,
         )
         place_sell_dollars(ticker, sell_usd)
+        record_trade("SELL", ticker, sell_usd, price=current_price,
+                     reason=stop_label.lower(), realized_pnl=sell_usd - dollars_remaining)
         del positions[ticker]
         save_positions(positions)
         return
@@ -1086,6 +1147,10 @@ def update_position_exit(ticker: str, pos: dict, current_price: float, positions
             )
             success = place_sell_dollars(ticker, sell_usd)
             if success:
+                cost_sold = min(round(dollars_invested * fraction, 2), dollars_remaining)
+                record_trade("SELL", ticker, sell_usd, price=current_price,
+                             reason=f"tier +{tier_pct*100:.0f}%",
+                             realized_pnl=sell_usd - cost_sold)
                 pos["dollars_remaining"] -= round(dollars_invested * fraction, 2)
                 pos["tiers_triggered"].append(tier_label)
                 dollars_remaining = pos["dollars_remaining"]
@@ -1127,8 +1192,82 @@ def close_all_positions(positions: dict) -> None:
             pct_gain = ((current_price - entry) / entry) if current_price else 0
             sell_usd = round(pos["dollars_remaining"] * (1 + pct_gain), 2)
             place_sell_dollars(ticker, sell_usd)
+            record_trade("SELL", ticker, sell_usd, price=current_price,
+                         reason="market close",
+                         realized_pnl=sell_usd - pos["dollars_remaining"])
         del positions[ticker]
     save_positions(positions)
+
+# ---------------------------------------------------------------------------
+# Discord reports (see discord_notify.py for webhook setup)
+# ---------------------------------------------------------------------------
+
+def build_pnl_line(positions: dict) -> str:
+    """One compact row for the #pnl channel."""
+    trades = todays_trades()
+    sells = [t for t in trades if t["action"] == "SELL"]
+    buys = [t for t in trades if t["action"] == "BUY"]
+    realized = sum(t["realized_pnl"] or 0 for t in sells)
+    wins = sum(1 for t in sells if (t["realized_pnl"] or 0) > 0)
+    losses = sum(1 for t in sells if (t["realized_pnl"] or 0) < 0)
+    return (
+        f"{get_eastern_now().strftime('%Y-%m-%d')} | "
+        f"realized ${realized:+.2f} | "
+        f"sells {len(sells)} ({wins}W/{losses}L) | "
+        f"buys {len(buys)} | "
+        f"open {len(positions)}"
+    )
+
+
+def build_bop_summary(positions: dict) -> str:
+    """Fuller end-of-day summary for the #bop channel."""
+    trades = todays_trades()
+    sells = [t for t in trades if t["action"] == "SELL"]
+    buys = [t for t in trades if t["action"] == "BUY"]
+    realized = sum(t["realized_pnl"] or 0 for t in sells)
+
+    lines = [f"**Daily summary — {get_eastern_now().strftime('%Y-%m-%d')}**"]
+    lines.append(f"Realized P&L: **${realized:+.2f}**")
+
+    if buys:
+        lines.append(f"\nEntered ({len(buys)}):")
+        for t in buys:
+            price = f" @ ${t['price']:.2f}" if t.get("price") else ""
+            lines.append(f"• {t['ticker']} ${t['dollars']:.2f}{price}")
+    if sells:
+        lines.append(f"\nClosed/trimmed ({len(sells)}):")
+        for t in sells:
+            pnl = t["realized_pnl"] or 0
+            lines.append(f"• {t['ticker']} ${pnl:+.2f} — {t['reason']}")
+    if not trades:
+        lines.append("\nNo trades today.")
+
+    if positions:
+        lines.append(f"\nStill open ({len(positions)}): " + ", ".join(positions.keys()))
+    return "\n".join(lines)
+
+
+def post_eod_reports(positions: dict) -> None:
+    """After the market-close sweep: one line to #pnl, summary to #bop.
+    A marker file keeps a same-day restart from posting twice."""
+    today = get_eastern_now().strftime("%Y-%m-%d")
+    if EOD_POST_MARKER.exists() and EOD_POST_MARKER.read_text().strip() == today:
+        return
+    discord_notify.post_pnl(build_pnl_line(positions))
+    discord_notify.post_bop(build_bop_summary(positions))
+    try:
+        EOD_POST_MARKER.write_text(today)
+    except OSError as exc:
+        logger.warning("Could not write EOD post marker: %s", exc)
+
+
+def post_shutdown_pnl(positions: dict) -> None:
+    """On shutdown, post the P&L line if today's EOD report hasn't gone out
+    (e.g. the bot is stopped mid-day)."""
+    today = get_eastern_now().strftime("%Y-%m-%d")
+    if EOD_POST_MARKER.exists() and EOD_POST_MARKER.read_text().strip() == today:
+        return
+    discord_notify.post_pnl(build_pnl_line(positions) + " | shutdown")
 
 # ---------------------------------------------------------------------------
 # Console summary
@@ -1208,6 +1347,7 @@ def print_summary(positions: dict, scan_entries: list) -> None:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
+    discord_notify.configure(dry_run=DRY_RUN)
     if DRY_RUN:
         logger.info("=" * 60)
         logger.info("  DRY RUN MODE — no real orders will be placed")
@@ -1237,6 +1377,7 @@ def main() -> None:
                     close_all_positions(positions)
                     closed_today = True
                     logger.info("Market closed — running after-hours mode.")
+                    post_eod_reports(positions)
                 try:
                     afterhours_scan(positions)
                 except Exception as exc:
@@ -1250,6 +1391,7 @@ def main() -> None:
                     close_all_positions(positions)
                     closed_today = True
                     logger.info("All positions closed for end of day. Waiting for tomorrow.")
+                    post_eod_reports(positions)
                 time.sleep(SCAN_INTERVAL_SECONDS)
                 continue
 
@@ -1350,14 +1492,24 @@ def main() -> None:
 
         except KeyboardInterrupt:
             logger.info("KeyboardInterrupt received — shutting down.")
+            post_shutdown_pnl(positions)
             break
         except Exception as exc:
             logger.error("Unhandled exception in main loop: %s", exc, exc_info=True)
 
-        time.sleep(SCAN_INTERVAL_SECONDS)
+        try:
+            time.sleep(SCAN_INTERVAL_SECONDS)
+        except KeyboardInterrupt:
+            logger.info("KeyboardInterrupt received — shutting down.")
+            post_shutdown_pnl(positions)
+            break
 
     logger.info("Bot stopped.")
 
 
 if __name__ == "__main__":
-    main()
+    if "--test-discord" in sys.argv:
+        print("Testing Discord webhooks...")
+        discord_notify.send_test()
+    else:
+        main()
