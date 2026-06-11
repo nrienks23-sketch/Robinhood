@@ -154,6 +154,7 @@ logging.basicConfig(
     ],
 )
 logger = logging.getLogger(__name__)
+logging.getLogger("yfinance").setLevel(logging.CRITICAL)
 
 # ---------------------------------------------------------------------------
 # Positions persistence
