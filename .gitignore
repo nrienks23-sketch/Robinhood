@@ -1,0 +1,13 @@
+# Secrets — never commit this file (this repo is public)
+local_config.json
+
+# Runtime state and logs
+positions.json
+premarket_watchlist.json
+trades.json
+last_eod_post.txt
+trader.log
+
+# Python
+__pycache__/
+*.pyc
