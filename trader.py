@@ -2,6 +2,7 @@
 # pip install robin_stocks yfinance pandas_ta pandas numpy pytz finvizfinance requests
 
 import os
+import getpass
 import re
 import json
 import time
@@ -248,10 +249,14 @@ def is_afterhours() -> bool:
 # ---------------------------------------------------------------------------
 
 def rh_login() -> bool:
-    username = os.environ.get("ROBINHOOD_USERNAME", "nrienks23@gmail.com")
-    password = os.environ.get("ROBINHOOD_PASSWORD", "LanD1989$$")
+    username = os.environ.get("ROBINHOOD_USERNAME")
+    password = os.environ.get("ROBINHOOD_PASSWORD")
+    if not username:
+        username = input("Robinhood email: ").strip()
+    if not password:
+        password = getpass.getpass("Robinhood password: ")
     if not username or not password:
-        logger.error("ROBINHOOD_USERNAME and ROBINHOOD_PASSWORD must be set.")
+        logger.error("Username and password are required.")
         return False
     try:
         r.login(username, password)
